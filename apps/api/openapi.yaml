@@ -1,0 +1,37 @@
+openapi: 3.1.0
+info:
+  title: Vockice Slot Machine API
+  description: Wild West themed slot machine game API (simulation only, no real money)
+  version: 0.1.0
+  contact:
+    name: Tin Minarik
+    email: tinminarik00@gmail.com
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Returns API and database health status
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  database:
+                    type: string
+                    enum: [connected, disconnected]

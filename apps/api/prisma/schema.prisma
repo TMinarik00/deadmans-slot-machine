@@ -1,0 +1,12 @@
+// Prisma schema for Vockice Slot Machine
+// This file defines our database models. Prisma uses it to generate
+// the DB client and migration files.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

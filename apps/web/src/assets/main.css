@@ -1,0 +1,34 @@
+/* Global reset and base styles for the Wild West theme */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background: #1a0f0a;
+  color: #f5e6d0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  /* Wild West color palette */
+  --color-bg: #1a0f0a;
+  --color-surface: #2a1a10;
+  --color-border: #8b6914;
+  --color-gold: #d4a020;
+  --color-text: #f5e6d0;
+  --color-text-muted: #a08060;
+  --color-success: #4ade80;
+  --color-error: #f87171;
+  --color-warning: #facc15;
+
+  /* Typography */
+  --font-display: "Rye", serif;
+  --font-body: "Inter", sans-serif;
+}
