@@ -114,4 +114,9 @@ async function handleReset() {
 
 .success-msg { text-align: center; color: var(--color-success); }
 .success-msg .link { color: var(--color-gold); text-decoration: none; display: inline-block; margin-top: 1rem; }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 1.5rem; }
+  .card-title { font-size: 1.3rem; margin-bottom: 1rem; }
+}
 </style>

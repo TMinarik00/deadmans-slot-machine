@@ -139,4 +139,9 @@ async function handleRegister() {
   text-decoration: none;
 }
 .link:hover { color: var(--color-gold); }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 1.5rem; }
+  .card-title { font-size: 1.3rem; margin-bottom: 1rem; }
+}
 </style>

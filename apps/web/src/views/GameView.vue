@@ -35,6 +35,7 @@ const authStore = useAuthStore();
 .subtitle {
   color: var(--color-text-muted);
   margin: 0.5rem 0 2rem;
+  padding: 0 1rem;
 }
 
 .placeholder-slot {
@@ -55,5 +56,12 @@ const authStore = useAuthStore();
   font-size: 3rem;
   color: var(--color-gold);
   font-family: var(--font-display);
+}
+
+@media (max-width: 480px) {
+  .title { font-size: 1.8rem; }
+  .subtitle { font-size: 0.9rem; }
+  .reel { width: 75px; height: 90px; font-size: 2.2rem; border-radius: 10px; }
+  .placeholder-slot { gap: 0.6rem; }
 }
 </style>

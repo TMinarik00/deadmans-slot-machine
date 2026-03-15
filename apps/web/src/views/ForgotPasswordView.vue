@@ -113,4 +113,9 @@ async function handleSubmit() {
 .auth-links { text-align: center; margin-top: 1.25rem; }
 .link { color: var(--color-text-muted); font-size: 0.85rem; text-decoration: none; }
 .link:hover { color: var(--color-gold); }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 1.5rem; }
+  .card-title { font-size: 1.3rem; margin-bottom: 1rem; }
+}
 </style>

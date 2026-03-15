@@ -144,4 +144,10 @@ async function handleLogin() {
 .link:hover {
   color: var(--color-gold);
 }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 1.5rem; }
+  .card-title { font-size: 1.3rem; margin-bottom: 1rem; }
+  .auth-links { flex-direction: column; align-items: center; gap: 0.5rem; }
+}
 </style>

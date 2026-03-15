@@ -26,6 +26,8 @@ model User {
 
   resetTokens   PasswordResetToken[]
   refreshTokens RefreshToken[]
+  wallets       Wallet[]
+  transactions  Transaction[]
 }
 
 // --- PasswordResetToken: one-time token for "forgot password" flow ---
@@ -58,4 +60,65 @@ model RefreshToken {
 
   @@index([tokenHash])                   // fast lookup during token refresh
   @@index([userId])                      // fast lookup/cleanup of user sessions
+}
+
+// --- Currency: supported virtual currencies ---
+enum Currency {
+  CHIPS // main game currency used for bets/wins
+  USD
+  EUR
+  GBP
+  BTC
+  ETH
+  LTC
+  SOL
+  DOGE
+  ADA
+}
+
+// --- TransactionType: categorizes wallet movements ---
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  CONVERSION_IN  // received from currency conversion
+  CONVERSION_OUT // spent on currency conversion
+  BET
+  WIN
+}
+
+// --- Wallet: one per user per currency ---
+// Users can hold balances in multiple currencies and convert between them.
+// CHIPS is the primary currency used for playing the slot machine.
+model Wallet {
+  id        String   @id @default(uuid())
+  currency  Currency @default(CHIPS)
+  balance   Decimal  @default(0) @db.Decimal(18, 2) // 18 digits, 2 decimal places
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@unique([userId, currency])           // one wallet per currency per user
+  @@index([userId])                      // fast lookup of all user wallets
+}
+
+// --- Transaction: immutable ledger of all wallet movements ---
+// Every deposit, withdrawal, conversion, bet, and win is recorded here.
+// balanceAfter provides a running balance for audit/display.
+model Transaction {
+  id           String          @id @default(uuid())
+  type         TransactionType
+  amount       Decimal         @db.Decimal(18, 2) // positive = credit, negative = debit
+  balanceAfter Decimal         @db.Decimal(18, 2) // wallet balance after this transaction
+  note         String?                            // optional description (e.g. "Convert USD→CHIPS")
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletId     String
+  wallet       Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+
+  @@index([userId])                      // transaction history per user
+  @@index([walletId])                    // transaction history per wallet
 }

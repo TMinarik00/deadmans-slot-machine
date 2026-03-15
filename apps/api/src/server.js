@@ -11,6 +11,7 @@ import { dirname, join } from "path";
 import { securityHeaders } from "./middleware/security-headers.js";
 import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
+import { walletRouter } from "./routes/wallet.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -39,6 +40,7 @@ app.use("/auth/forgot-password", authLimiter);
 // --- Routes ---
 app.use(healthRouter);
 app.use(authRouter);
+app.use(walletRouter);
 
 // Swagger UI - interactive API docs at /docs
 const swaggerDoc = YAML.load(join(__dirname, "..", "openapi.yaml"));

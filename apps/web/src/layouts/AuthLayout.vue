@@ -53,4 +53,11 @@ import { RouterView } from "vue-router";
   letter-spacing: 3px;
   text-transform: uppercase;
 }
+
+@media (max-width: 480px) {
+  .auth-container { max-width: 100%; }
+  .auth-header { margin-bottom: 1.25rem; }
+  .logo { font-size: 2rem; }
+  .tagline { font-size: 0.85rem; letter-spacing: 2px; }
+}
 </style>

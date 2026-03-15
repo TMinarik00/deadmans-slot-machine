@@ -15,6 +15,7 @@ import RegisterView from "../views/RegisterView.vue";
 import ForgotPasswordView from "../views/ForgotPasswordView.vue";
 import ResetPasswordView from "../views/ResetPasswordView.vue";
 import GameView from "../views/GameView.vue";
+import WalletView from "../views/WalletView.vue";
 
 const routes = [
   // Auth routes (no navbar)
@@ -37,6 +38,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: "", name: "game", component: GameView },
+      { path: "wallet", name: "wallet", component: WalletView },
     ],
   },
 ];

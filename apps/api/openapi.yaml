@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Dead Man's Slot Machine API
   description: Wild West themed slot machine game API (simulation only, no real money)
-  version: 0.2.0
+  version: 0.3.0
   contact:
     name: Tin Minarik
     email: tinminarik00@gmail.com
@@ -51,6 +51,49 @@ components:
                 type: string
               message:
                 type: string
+
+    Currency:
+      type: string
+      enum: [CHIPS, USD, EUR, GBP, BTC, ETH, LTC, SOL, DOGE, ADA]
+
+    Wallet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        currency:
+          $ref: "#/components/schemas/Currency"
+        balance:
+          type: string
+          description: Decimal balance as string for precision
+        updatedAt:
+          type: string
+          format: date-time
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL, CONVERSION_IN, CONVERSION_OUT, BET, WIN]
+        amount:
+          type: string
+        balanceAfter:
+          type: string
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        wallet:
+          type: object
+          properties:
+            currency:
+              $ref: "#/components/schemas/Currency"
 
 paths:
   /health:
@@ -276,6 +319,197 @@ paths:
                     type: string
         "400":
           description: Invalid or expired reset token
+
+  /wallet:
+    get:
+      tags: [Wallet]
+      summary: List all wallets for the current user
+      description: Returns all currency wallets. Auto-creates a CHIPS wallet with 1000 welcome bonus on first access.
+      operationId: getWallets
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User wallets and conversion rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallets:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Wallet"
+                  rates:
+                    type: object
+                    description: Conversion rates (currency → CHIPS)
+                    example: { CHIPS: 1, USD: 100, EUR: 120, GBP: 140 }
+
+  /wallet/transactions:
+    get:
+      tags: [Wallet]
+      summary: Get transaction history
+      description: Returns the 50 most recent transactions across all wallets
+      operationId: getTransactions
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+
+  /wallet/deposit:
+    post:
+      tags: [Wallet]
+      summary: Deposit virtual funds
+      operationId: deposit
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                currency:
+                  $ref: "#/components/schemas/Currency"
+                  default: CHIPS
+                amount:
+                  type: number
+                  minimum: 0.01
+                  maximum: 1000000
+                  example: 500
+      responses:
+        "200":
+          description: Deposit successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallet:
+                    $ref: "#/components/schemas/Wallet"
+                  transaction:
+                    $ref: "#/components/schemas/Transaction"
+
+  /wallet/withdraw:
+    post:
+      tags: [Wallet]
+      summary: Withdraw virtual funds
+      operationId: withdraw
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                currency:
+                  $ref: "#/components/schemas/Currency"
+                  default: CHIPS
+                amount:
+                  type: number
+                  minimum: 0.01
+                  example: 100
+      responses:
+        "200":
+          description: Withdrawal successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallet:
+                    $ref: "#/components/schemas/Wallet"
+                  transaction:
+                    $ref: "#/components/schemas/Transaction"
+        "400":
+          description: Insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /wallet/convert:
+    post:
+      tags: [Wallet]
+      summary: Convert between currencies
+      description: "Converts virtual funds between currencies. Rates: 1 USD = 100 CHIPS, 1 EUR = 120 CHIPS, 1 GBP = 140 CHIPS."
+      operationId: convertCurrency
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from, to, amount]
+              properties:
+                from:
+                  $ref: "#/components/schemas/Currency"
+                to:
+                  $ref: "#/components/schemas/Currency"
+                amount:
+                  type: number
+                  minimum: 0.01
+                  example: 10
+      responses:
+        "200":
+          description: Conversion successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    $ref: "#/components/schemas/Wallet"
+                  dest:
+                    $ref: "#/components/schemas/Wallet"
+                  converted:
+                    type: number
+                    description: Amount credited to destination
+                  rate:
+                    type: string
+                    description: Human-readable rate
+        "400":
+          description: Insufficient balance or invalid conversion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /wallet/rates:
+    get:
+      tags: [Wallet]
+      summary: Get currency conversion rates
+      operationId: getRates
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Conversion rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rates:
+                    type: object
+                    example: { CHIPS: 1, USD: 100, EUR: 120, GBP: 140 }
 
   /me:
     get:

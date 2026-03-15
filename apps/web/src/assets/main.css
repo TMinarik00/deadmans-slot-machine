@@ -32,3 +32,19 @@ body {
   --font-display: "Rye", serif;
   --font-body: "Inter", sans-serif;
 }
+
+/* Prevent horizontal overflow on mobile */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Make all inputs/selects/buttons respect parent width */
+input, select, textarea, button {
+  max-width: 100%;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
