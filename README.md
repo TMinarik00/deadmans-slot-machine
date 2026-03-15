@@ -1,4 +1,4 @@
-# Vockice - Wild West Slot Machine
+# Dead Man's Slot Machine
 
 A full-stack slot machine simulation game with a Wild West theme. Built with Vue 3, Express, PostgreSQL, and Docker.
 

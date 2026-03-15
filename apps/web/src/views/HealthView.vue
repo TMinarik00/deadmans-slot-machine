@@ -6,7 +6,7 @@
 <template>
   <div class="health-page">
     <div class="health-card">
-      <h1 class="title">Vockice</h1>
+      <h1 class="title">Dead Man's</h1>
       <p class="subtitle">Wild West Slot Machine</p>
 
       <div class="status-section">

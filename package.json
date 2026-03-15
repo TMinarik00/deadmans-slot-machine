@@ -1,5 +1,5 @@
 {
-  "name": "vockice-slot-game",
+  "name": "deadmans-slot-machine",
   "private": true,
   "workspaces": ["apps/api", "apps/web"],
   "scripts": {
