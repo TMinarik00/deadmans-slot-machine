@@ -12,6 +12,7 @@ import { securityHeaders } from "./middleware/security-headers.js";
 import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
 import { walletRouter } from "./routes/wallet.js";
+import { gameRouter } from "./routes/game.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -41,6 +42,7 @@ app.use("/auth/forgot-password", authLimiter);
 app.use(healthRouter);
 app.use(authRouter);
 app.use(walletRouter);
+app.use(gameRouter);
 
 // Swagger UI - interactive API docs at /docs
 const swaggerDoc = YAML.load(join(__dirname, "..", "openapi.yaml"));

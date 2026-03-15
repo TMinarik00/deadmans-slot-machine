@@ -1,67 +1,53 @@
 <!--
-  Placeholder game page - will be replaced with the slot machine in Cycle 3.
-  For now just shows the user is logged in and the layout works.
+  Main game page - shows game lobby or active slot machine.
+  Fetches available games on mount, delegates to GameSelector or SlotMachine.
 -->
 <template>
-  <div class="game-placeholder">
-    <h1 class="title">The Saloon</h1>
-    <p class="subtitle">Welcome, {{ authStore.user?.username }}! The slot machine is being built...</p>
-    <div class="placeholder-slot">
-      <div class="reel">?</div>
-      <div class="reel">?</div>
-      <div class="reel">?</div>
+  <div class="game-view">
+    <div v-if="gameStore.error && !gameStore.currentGame" class="load-error">
+      {{ gameStore.error }}
     </div>
+
+    <!-- Slot machine (active game) -->
+    <SlotMachine
+      v-if="gameStore.currentGame"
+      :game="gameStore.currentGame"
+      @back="gameStore.leaveGame()"
+    />
+
+    <!-- Game lobby (no game selected) -->
+    <GameSelector
+      v-else
+      :games="gameStore.games"
+      @select="gameStore.selectGame($event)"
+    />
   </div>
 </template>
 
 <script setup>
-import { useAuthStore } from "../stores/auth.js";
-const authStore = useAuthStore();
+import { onMounted } from "vue";
+import { useGameStore } from "../stores/game.js";
+import GameSelector from "../components/GameSelector.vue";
+import SlotMachine from "../components/SlotMachine.vue";
+
+const gameStore = useGameStore();
+
+onMounted(() => {
+  if (gameStore.games.length === 0) {
+    gameStore.fetchGames();
+  }
+});
 </script>
 
 <style scoped>
-.game-placeholder {
+.game-view {
+  padding: 0.5rem 0;
+}
+
+.load-error {
   text-align: center;
-  padding: 3rem 0;
-}
-
-.title {
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  color: var(--color-gold);
-  margin: 0;
-}
-
-.subtitle {
-  color: var(--color-text-muted);
-  margin: 0.5rem 0 2rem;
-  padding: 0 1rem;
-}
-
-.placeholder-slot {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-}
-
-.reel {
-  width: 100px;
-  height: 120px;
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  color: var(--color-gold);
-  font-family: var(--font-display);
-}
-
-@media (max-width: 480px) {
-  .title { font-size: 1.8rem; }
-  .subtitle { font-size: 0.9rem; }
-  .reel { width: 75px; height: 90px; font-size: 2.2rem; border-radius: 10px; }
-  .placeholder-slot { gap: 0.6rem; }
+  color: var(--color-error);
+  padding: 2rem 1rem;
+  font-size: 0.9rem;
 }
 </style>

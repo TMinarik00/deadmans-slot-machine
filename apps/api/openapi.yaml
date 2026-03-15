@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Dead Man's Slot Machine API
   description: Wild West themed slot machine game API (simulation only, no real money)
-  version: 0.3.0
+  version: 0.4.0
   contact:
     name: Tin Minarik
     email: tinminarik00@gmail.com
@@ -530,3 +530,185 @@ paths:
                     $ref: "#/components/schemas/User"
         "401":
           description: Not authenticated
+
+  /game/list:
+    get:
+      tags: [Game]
+      summary: List available slot games
+      description: Returns all slot game configs including symbols, ways, bet options, and feature flags.
+      operationId: getGameList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of available games
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  games:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: dead-mans-gun
+                        name:
+                          type: string
+                          example: "Dead Man's Gun"
+                        description:
+                          type: string
+                        theme:
+                          type: string
+                          enum: [gunslinger, treasure, desert, canyon]
+                        reels:
+                          type: integer
+                          example: 5
+                        rows:
+                          type: integer
+                          example: 4
+                        ways:
+                          type: integer
+                          example: 1024
+                        betOptions:
+                          type: array
+                          items:
+                            type: number
+                          example: [10, 20, 50, 100, 200, 500]
+                        symbols:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              emoji:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                                enum: [wild, scatter, regular, bonus]
+                              payouts:
+                                type: object
+                                nullable: true
+                              scatterPayouts:
+                                type: object
+                                nullable: true
+
+  /game/{id}:
+    get:
+      tags: [Game]
+      summary: Get a single game config
+      operationId: getGame
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: dead-mans-gun
+      responses:
+        "200":
+          description: Game config
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    type: object
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /game/spin:
+    post:
+      tags: [Game]
+      summary: Spin the slot machine
+      description: Deducts bet from CHIPS wallet, generates a random result, credits any winnings. Uses ways-to-win system.
+      operationId: spin
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameId, betAmount]
+              properties:
+                gameId:
+                  type: string
+                  example: dead-mans-gun
+                betAmount:
+                  type: number
+                  description: Must be one of the game's betOptions
+                  example: 20
+      responses:
+        "200":
+          description: Spin result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gameId:
+                    type: string
+                  grid:
+                    type: array
+                    description: "grid[reel][row] = symbolId"
+                    items:
+                      type: array
+                      items:
+                        type: string
+                  wins:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbolId:
+                          type: string
+                        count:
+                          type: integer
+                        ways:
+                          type: integer
+                        positions:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              type: integer
+                        payout:
+                          type: number
+                        isScatter:
+                          type: boolean
+                  totalWin:
+                    type: number
+                  totalBet:
+                    type: number
+                  balance:
+                    type: number
+                    description: CHIPS balance after spin
+                  featureTriggered:
+                    type: object
+                    nullable: true
+                    description: "Feature trigger info (null if none). Reserved for future mini-games."
+                  symbolMap:
+                    type: object
+                    description: "Map of symbolId → {emoji, name, type}"
+        "400":
+          description: Invalid bet or insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Game not found
