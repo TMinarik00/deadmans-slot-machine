@@ -3,10 +3,10 @@
 -->
 <template>
   <div class="wallet-page">
-    <h1 class="title">The Vault</h1>
+    <h1 class="title fade-up">The Vault</h1>
 
     <!-- Balance card -->
-    <div class="balance-card">
+    <div class="balance-card fade-up fade-up-1 glow-pulse">
       <span class="balance-label">Your Balance</span>
       <span class="balance-value">{{ walletStore.chipsBalance.toLocaleString() }}</span>
       <span class="balance-unit">CHIPS</span>
@@ -26,7 +26,7 @@
     <p v-if="successMsg" class="success-msg">{{ successMsg }}</p>
 
     <!-- Transaction history -->
-    <div class="tx-section">
+    <div class="tx-section fade-up fade-up-2">
       <h2 class="section-title">Recent Transactions</h2>
       <div v-if="walletStore.transactions.length === 0 && !walletStore.loading" class="empty-state">
         No transactions yet. Make a deposit to get started!

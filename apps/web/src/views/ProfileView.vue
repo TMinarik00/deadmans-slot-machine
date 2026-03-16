@@ -3,20 +3,21 @@
 -->
 <template>
   <div class="profile-page">
-    <h1 class="title">Wanted Board</h1>
+    <h1 class="title fade-up">Wanted Board</h1>
 
     <!-- Hero: level + XP -->
-    <div class="hero-card">
+    <BaseCard variant="gold" glow class="hero-card fade-up fade-up-1">
       <div class="hero-top">
-        <div class="level-ring">
+        <div class="level-ring glow-pulse">
           <span class="level-num">{{ profileStore.level }}</span>
         </div>
         <div class="hero-info">
           <h2 class="hero-name">{{ authStore.user?.username }}</h2>
-          <div class="xp-bar-wrap">
-            <div class="xp-bar" :style="{ width: profileStore.xpPercent + '%' }"></div>
-          </div>
-          <span class="xp-text">{{ profileStore.xpProgress }} / {{ profileStore.xpNeeded }} XP</span>
+          <BaseProgressBar
+            :value="profileStore.xpProgress"
+            :max="profileStore.xpNeeded"
+            :label="`${profileStore.xpProgress} / ${profileStore.xpNeeded} XP`"
+          />
         </div>
       </div>
 
@@ -31,56 +32,27 @@
         <template v-else-if="profileStore.canClaimDaily">Claim Daily Bonus</template>
         <template v-else>Next bonus in {{ countdown }}</template>
       </button>
-    </div>
+    </BaseCard>
 
     <!-- Reward toast -->
     <div v-if="rewardMsg" class="reward-toast">{{ rewardMsg }}</div>
 
     <!-- Stats grid -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <span class="stat-value">{{ formatNum(profileStore.stats.totalSpins) }}</span>
-        <span class="stat-label">Total Spins</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value">{{ formatNum(profileStore.stats.totalWins) }}</span>
-        <span class="stat-label">Total Wins</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value">{{ formatNum(profileStore.stats.totalWagered) }}</span>
-        <span class="stat-label">Wagered</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value">{{ formatNum(profileStore.stats.totalWon) }}</span>
-        <span class="stat-label">Total Won</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value">{{ formatNum(profileStore.stats.biggestWin) }}</span>
-        <span class="stat-label">Biggest Win</span>
-      </div>
-      <div class="stat-card stat-card--wide">
-        <span class="stat-value stat-value--sm">{{ profileStore.stats.favoriteGame || '—' }}</span>
-        <span class="stat-label">Favorite Game</span>
-      </div>
+    <div class="stats-grid fade-up fade-up-2">
+      <BaseCard v-for="stat in statCards" :key="stat.label" variant="subtle" class="stat-card">
+        <span class="stat-value" :class="{ 'stat-value--sm': stat.small }">{{ stat.value }}</span>
+        <span class="stat-label">{{ stat.label }}</span>
+      </BaseCard>
     </div>
 
     <!-- Achievements -->
-    <div class="ach-section">
+    <div class="ach-section fade-up fade-up-3">
       <h2 class="section-title">
         Achievements
         <span class="ach-counter">{{ claimedCount }} / {{ profileStore.achievements.length }}</span>
       </h2>
 
-      <!-- Category filter -->
-      <div class="cat-tabs">
-        <button
-          v-for="cat in categories"
-          :key="cat.value"
-          class="cat-tab"
-          :class="{ active: selectedCategory === cat.value }"
-          @click="selectedCategory = cat.value"
-        >{{ cat.label }}</button>
-      </div>
+      <BaseTabs v-model="selectedCategory" :tabs="categories" compact class="ach-tabs" />
 
       <div class="ach-grid">
         <div
@@ -92,9 +64,7 @@
           <span class="ach-icon">{{ categoryIcon(ach.category) }}</span>
           <span class="ach-name">{{ ach.name }}</span>
           <span class="ach-desc">{{ ach.description }}</span>
-          <div class="ach-bar-wrap">
-            <div class="ach-bar" :style="{ width: achPercent(ach) + '%' }"></div>
-          </div>
+          <BaseProgressBar :value="ach.progress" :max="ach.threshold" size="sm" />
           <span class="ach-progress">{{ ach.progress }} / {{ ach.threshold }}</span>
           <button
             v-if="ach.unlocked && !ach.claimed"
@@ -119,6 +89,9 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "../stores/auth.js";
 import { useProfileStore } from "../stores/profile.js";
 import { useWalletStore } from "../stores/wallet.js";
+import BaseCard from "../components/ui/BaseCard.vue";
+import BaseTabs from "../components/ui/BaseTabs.vue";
+import BaseProgressBar from "../components/ui/BaseProgressBar.vue";
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
@@ -139,6 +112,15 @@ const categories = [
   { value: "game", label: "Games" },
 ];
 
+const statCards = computed(() => [
+  { value: formatNum(profileStore.stats.totalSpins), label: "Total Spins" },
+  { value: formatNum(profileStore.stats.totalWins), label: "Total Wins" },
+  { value: formatNum(profileStore.stats.totalWagered), label: "Wagered" },
+  { value: formatNum(profileStore.stats.totalWon), label: "Total Won" },
+  { value: formatNum(profileStore.stats.biggestWin), label: "Biggest Win" },
+  { value: profileStore.stats.favoriteGameId || "\u2014", label: "Favorite Game", small: true },
+]);
+
 const claimedCount = computed(() =>
   profileStore.achievements.filter((a) => a.claimed).length
 );
@@ -151,11 +133,6 @@ const filteredAchievements = computed(() => {
 function categoryIcon(cat) {
   const icons = { general: "\u2B50", wins: "\uD83C\uDFC6", levels: "\uD83D\uDCC8", game: "\uD83C\uDFB0" };
   return icons[cat] || "\u2B50";
-}
-
-function achPercent(ach) {
-  if (!ach.threshold) return 0;
-  return Math.min(100, (ach.progress / ach.threshold) * 100);
 }
 
 function formatNum(val) {
@@ -174,8 +151,8 @@ async function claimDaily() {
     const data = await profileStore.claimDailyBonus();
     walletStore.fetchWallets();
     let msg = `+${data.chipsAwarded} CHIPS, +${data.xpAwarded} XP`;
-    if (data.levelUpRewards?.length) {
-      msg += ` | Level up! +${data.levelUpRewards.reduce((s, r) => s + r.reward, 0)} bonus CHIPS`;
+    if (data.levelUpRewards > 0) {
+      msg += ` | Level up! +${data.levelUpRewards} bonus CHIPS`;
     }
     showReward(msg);
     startCountdown();
@@ -192,7 +169,7 @@ async function claimAch(ach) {
     const data = await profileStore.claimAchievement(ach.id);
     walletStore.fetchWallets();
     let msg = `${ach.name}: +${data.chipsAwarded} CHIPS, +${data.xpAwarded} XP`;
-    if (data.levelUpRewards?.length) {
+    if (data.levelUpRewards > 0) {
       msg += ` | Level up!`;
     }
     showReward(msg);
@@ -253,12 +230,9 @@ onUnmounted(() => clearInterval(countdownTimer));
 }
 
 /* ── Hero card ── */
-.hero-card {
-  background: linear-gradient(135deg, var(--color-surface) 0%, rgba(212, 160, 32, 0.08) 100%);
-  border: 2px solid var(--color-gold);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+.hero-card { margin-bottom: 1.5rem; }
+
+.hero-card :deep(.card-body) {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -280,7 +254,6 @@ onUnmounted(() => clearInterval(countdownTimer));
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 0 12px rgba(212, 160, 32, 0.2);
 }
 
 .level-num {
@@ -299,28 +272,6 @@ onUnmounted(() => clearInterval(countdownTimer));
   font-size: 1.2rem;
   color: var(--color-text);
   margin: 0 0 0.5rem;
-}
-
-.xp-bar-wrap {
-  height: 10px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 5px;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-}
-
-.xp-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #d4a020, #ffd700);
-  border-radius: 5px;
-  transition: width 0.5s ease;
-}
-
-.xp-text {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  margin-top: 0.25rem;
-  display: block;
 }
 
 /* Daily bonus */
@@ -386,19 +337,13 @@ onUnmounted(() => clearInterval(countdownTimer));
   margin-bottom: 1.75rem;
 }
 
-.stat-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 1rem 0.75rem;
-  text-align: center;
+.stat-card { text-align: center; }
+
+.stat-card :deep(.card-body) {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-}
-
-.stat-card--wide {
-  grid-column: span 2;
+  padding: 1rem 0.75rem;
 }
 
 .stat-value {
@@ -408,7 +353,7 @@ onUnmounted(() => clearInterval(countdownTimer));
 }
 
 .stat-value--sm {
-  font-size: 1rem;
+  font-size: 0.95rem;
   word-break: break-word;
 }
 
@@ -420,9 +365,7 @@ onUnmounted(() => clearInterval(countdownTimer));
 }
 
 /* ── Achievements ── */
-.ach-section {
-  margin-bottom: 2rem;
-}
+.ach-section { margin-bottom: 2rem; }
 
 .section-title {
   font-family: var(--font-display);
@@ -441,34 +384,7 @@ onUnmounted(() => clearInterval(countdownTimer));
   font-weight: 400;
 }
 
-.cat-tabs {
-  display: flex;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.cat-tab {
-  background: none;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  padding: 0.3rem 0.7rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.78rem;
-  transition: all 0.15s;
-}
-
-.cat-tab:hover {
-  border-color: var(--color-gold);
-  color: var(--color-gold);
-}
-
-.cat-tab.active {
-  background: rgba(212, 160, 32, 0.15);
-  border-color: var(--color-gold);
-  color: var(--color-gold);
-}
+.ach-tabs { margin-bottom: 0.75rem; }
 
 .ach-grid {
   display: grid;
@@ -485,54 +401,16 @@ onUnmounted(() => clearInterval(countdownTimer));
   flex-direction: column;
   gap: 0.3rem;
   opacity: 0.55;
-  transition: all 0.2s;
+  transition: all 0.25s;
 }
 
-.ach-card.unlocked {
-  opacity: 1;
-  border-color: var(--color-gold);
-}
+.ach-card.unlocked { opacity: 1; border-color: var(--color-gold); }
+.ach-card.claimed { opacity: 0.8; border-color: var(--color-border); }
 
-.ach-card.claimed {
-  opacity: 0.8;
-  border-color: var(--color-border);
-}
-
-.ach-icon {
-  font-size: 1.5rem;
-}
-
-.ach-name {
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--color-text);
-}
-
-.ach-desc {
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
-  line-height: 1.3;
-}
-
-.ach-bar-wrap {
-  height: 6px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 0.15rem;
-}
-
-.ach-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #d4a020, #ffd700);
-  border-radius: 3px;
-  transition: width 0.4s ease;
-}
-
-.ach-progress {
-  font-size: 0.65rem;
-  color: var(--color-text-muted);
-}
+.ach-icon { font-size: 1.5rem; }
+.ach-name { font-weight: 700; font-size: 0.85rem; color: var(--color-text); }
+.ach-desc { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.3; }
+.ach-progress { font-size: 0.65rem; color: var(--color-text-muted); }
 
 .ach-claim-btn {
   margin-top: 0.25rem;
@@ -552,10 +430,7 @@ onUnmounted(() => clearInterval(countdownTimer));
   box-shadow: 0 2px 8px rgba(212, 160, 32, 0.3);
 }
 
-.ach-claim-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
+.ach-claim-btn:disabled { opacity: 0.6; cursor: default; }
 
 .ach-claimed-tag {
   font-size: 0.7rem;
@@ -578,12 +453,10 @@ onUnmounted(() => clearInterval(countdownTimer));
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .title { font-size: 1.7rem; margin-bottom: 1rem; }
-  .hero-card { padding: 1.25rem; }
   .level-ring { width: 52px; height: 52px; }
   .level-num { font-size: 1.3rem; }
   .hero-name { font-size: 1rem; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .stat-card--wide { grid-column: span 2; }
   .ach-grid { grid-template-columns: 1fr; }
 }
 

@@ -3,21 +3,17 @@
 -->
 <template>
   <div class="lb-page">
-    <h1 class="title">Hall of Fame</h1>
+    <h1 class="title fade-up">Hall of Fame</h1>
 
     <!-- Type tabs -->
-    <div class="lb-tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.value"
-        class="lb-tab"
-        :class="{ active: profileStore.leaderboardType === tab.value }"
-        @click="switchType(tab.value)"
-      >{{ tab.label }}</button>
-    </div>
+    <BaseTabs
+      v-model="currentType"
+      :tabs="tabs"
+      class="lb-tabs fade-up fade-up-1"
+    />
 
     <!-- Table -->
-    <div class="lb-table" v-if="profileStore.leaderboard.length">
+    <BaseCard variant="default" flush class="lb-card fade-up fade-up-2" v-if="profileStore.leaderboard.length">
       <div class="lb-header">
         <span class="lb-col lb-col--rank">#</span>
         <span class="lb-col lb-col--name">Player</span>
@@ -46,12 +42,15 @@
         </span>
         <span class="lb-col lb-col--stat">{{ formatStat(entry) }}</span>
       </div>
-    </div>
+    </BaseCard>
 
     <!-- Empty state -->
-    <div v-else-if="!profileStore.error" class="empty-state">
-      No data yet. Start playing to climb the ranks!
-    </div>
+    <BaseEmptyState
+      v-else-if="!profileStore.error"
+      icon="trophy"
+      message="No data yet. Start playing to climb the ranks!"
+      class="fade-up fade-up-2"
+    />
 
     <!-- Error -->
     <p v-if="profileStore.error" class="error-msg">{{ profileStore.error }}</p>
@@ -59,9 +58,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useAuthStore } from "../stores/auth.js";
 import { useProfileStore } from "../stores/profile.js";
+import BaseTabs from "../components/ui/BaseTabs.vue";
+import BaseCard from "../components/ui/BaseCard.vue";
+import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
 
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
@@ -72,25 +74,26 @@ const tabs = [
   { value: "level", label: "Level" },
 ];
 
+const currentType = ref("totalWon");
+
 const statLabel = computed(() => {
   const map = { totalWon: "Total Won", biggestWin: "Biggest Win", level: "Level" };
-  return map[profileStore.leaderboardType] || "Value";
+  return map[currentType.value] || "Value";
 });
 
-function switchType(type) {
+watch(currentType, (type) => {
   profileStore.fetchLeaderboard(type);
-}
+});
 
 function formatStat(entry) {
-  const type = profileStore.leaderboardType;
-  if (type === "totalWon") return Number(entry.totalWon || 0).toLocaleString();
-  if (type === "biggestWin") return Number(entry.biggestWin || 0).toLocaleString();
-  if (type === "level") return entry.level;
-  return "—";
+  if (currentType.value === "totalWon") return Number(entry.totalWon || 0).toLocaleString();
+  if (currentType.value === "biggestWin") return Number(entry.biggestWin || 0).toLocaleString();
+  if (currentType.value === "level") return entry.level;
+  return "\u2014";
 }
 
 onMounted(() => {
-  profileStore.fetchLeaderboard(profileStore.leaderboardType);
+  profileStore.fetchLeaderboard(currentType.value);
 });
 </script>
 
@@ -108,44 +111,13 @@ onMounted(() => {
   margin: 0 0 1.5rem;
 }
 
-/* ── Tabs ── */
 .lb-tabs {
-  display: flex;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
   justify-content: center;
-}
-
-.lb-tab {
-  background: none;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  padding: 0.45rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.15s;
-}
-
-.lb-tab:hover {
-  border-color: var(--color-gold);
-  color: var(--color-gold);
-}
-
-.lb-tab.active {
-  background: rgba(212, 160, 32, 0.15);
-  border-color: var(--color-gold);
-  color: var(--color-gold);
+  margin-bottom: 1rem;
 }
 
 /* ── Table ── */
-.lb-table {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  overflow: hidden;
-}
+.lb-card { overflow: hidden; }
 
 .lb-header {
   display: flex;
@@ -165,57 +137,22 @@ onMounted(() => {
   transition: background 0.15s;
 }
 
-.lb-row:last-child {
-  border-bottom: none;
-}
-
-.lb-row:hover {
-  background: rgba(212, 160, 32, 0.04);
-}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: rgba(212, 160, 32, 0.04); }
 
 .lb-self {
   background: rgba(212, 160, 32, 0.1) !important;
   border-left: 3px solid var(--color-gold);
 }
 
-.lb-top3 {
-  font-weight: 600;
-}
+.lb-top3 { font-weight: 600; }
 
-.lb-col {
-  font-size: 0.88rem;
-  color: var(--color-text);
-}
+.lb-col { font-size: 0.88rem; color: var(--color-text); }
+.lb-col--rank { width: 44px; flex-shrink: 0; text-align: center; }
+.lb-col--name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-col--level { width: 56px; flex-shrink: 0; text-align: center; }
+.lb-col--stat { width: 100px; flex-shrink: 0; text-align: right; font-weight: 600; color: var(--color-gold); }
 
-.lb-col--rank {
-  width: 44px;
-  flex-shrink: 0;
-  text-align: center;
-}
-
-.lb-col--name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.lb-col--level {
-  width: 56px;
-  flex-shrink: 0;
-  text-align: center;
-}
-
-.lb-col--stat {
-  width: 100px;
-  flex-shrink: 0;
-  text-align: right;
-  font-weight: 600;
-  color: var(--color-gold);
-}
-
-/* Rank medals */
 .rank-medal {
   display: inline-flex;
   align-items: center;
@@ -230,16 +167,9 @@ onMounted(() => {
   box-shadow: 0 2px 6px rgba(212, 160, 32, 0.3);
 }
 
-.rank-silver {
-  background: linear-gradient(145deg, #c0c0c0, #808080);
-}
+.rank-silver { background: linear-gradient(145deg, #c0c0c0, #808080); }
+.rank-bronze { background: linear-gradient(145deg, #cd7f32, #8b5a2b); color: #fff; }
 
-.rank-bronze {
-  background: linear-gradient(145deg, #cd7f32, #8b5a2b);
-  color: #fff;
-}
-
-/* Level pill */
 .level-pill {
   display: inline-block;
   background: rgba(212, 160, 32, 0.15);
@@ -248,16 +178,6 @@ onMounted(() => {
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 700;
-}
-
-/* ── Empty / Error ── */
-.empty-state {
-  text-align: center;
-  color: var(--color-text-muted);
-  padding: 2.5rem 1rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
 }
 
 .error-msg {
@@ -270,10 +190,8 @@ onMounted(() => {
   border-radius: 8px;
 }
 
-/* ── Responsive ── */
 @media (max-width: 600px) {
   .title { font-size: 1.7rem; margin-bottom: 1rem; }
-  .lb-tab { padding: 0.4rem 0.7rem; font-size: 0.78rem; }
   .lb-row { padding: 0.55rem 0.7rem; }
   .lb-col { font-size: 0.82rem; }
   .lb-col--stat { width: 80px; }
@@ -281,8 +199,6 @@ onMounted(() => {
 }
 
 @media (max-width: 380px) {
-  .lb-tabs { gap: 0.25rem; }
-  .lb-tab { padding: 0.35rem 0.5rem; font-size: 0.72rem; }
   .lb-col--rank { width: 36px; }
   .lb-col--level { width: 44px; }
   .lb-col--stat { width: 68px; font-size: 0.75rem; }

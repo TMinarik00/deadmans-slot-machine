@@ -2,33 +2,46 @@
   Register page. Creates a new account and auto-logs in on success.
 -->
 <template>
-  <div class="auth-card">
+  <div class="auth-card fade-up">
     <h2 class="card-title">Join the Game</h2>
 
     <form @submit.prevent="handleRegister" class="auth-form">
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" v-model="email" type="email" placeholder="cowboy@deadmans.com" required />
-      </div>
+      <BaseInput
+        v-model="email"
+        label="Email"
+        type="email"
+        placeholder="cowboy@deadmans.com"
+        :required="true"
+        class="fade-up fade-up-1"
+      />
 
-      <div class="field">
-        <label for="username">Username</label>
-        <input id="username" v-model="username" type="text" placeholder="wild_bill" required minlength="3" maxlength="20" />
-      </div>
+      <BaseInput
+        v-model="username"
+        label="Username"
+        type="text"
+        placeholder="wild_bill"
+        :required="true"
+        :maxlength="20"
+        class="fade-up fade-up-2"
+      />
 
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" v-model="password" type="password" placeholder="Min 8 characters" required minlength="8" />
-      </div>
+      <BaseInput
+        v-model="password"
+        label="Password"
+        type="password"
+        placeholder="Min 8 characters"
+        :required="true"
+        class="fade-up fade-up-3"
+      />
 
       <p v-if="authStore.error" class="error-msg">{{ authStore.error }}</p>
 
-      <button type="submit" class="btn-primary" :disabled="authStore.loading">
+      <BaseButton block :loading="authStore.loading" class="fade-up fade-up-4">
         {{ authStore.loading ? "Creating account..." : "Create Account" }}
-      </button>
+      </BaseButton>
     </form>
 
-    <div class="auth-links">
+    <div class="auth-links fade-up fade-up-5">
       <RouterLink to="/login" class="link">Already have an account? Sign in</RouterLink>
     </div>
   </div>
@@ -38,6 +51,8 @@
 import { ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
 import { useAuthStore } from "../stores/auth.js";
+import BaseButton from "../components/ui/BaseButton.vue";
+import BaseInput from "../components/ui/BaseInput.vue";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -60,7 +75,7 @@ async function handleRegister() {
 .auth-card {
   background: var(--color-surface);
   border: 2px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 2rem;
   box-shadow: 0 0 30px rgba(139, 105, 20, 0.2);
 }
@@ -79,54 +94,22 @@ async function handleRegister() {
   gap: 1rem;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.field label {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.field input {
-  padding: 0.7rem 0.9rem;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text);
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.field input:focus {
-  border-color: var(--color-gold);
-}
-
 .error-msg {
   color: var(--color-error);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   text-align: center;
   margin: 0;
+  padding: 0.5rem;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 6px;
+  animation: shake 0.3s ease;
 }
 
-.btn-primary {
-  padding: 0.75rem;
-  background: var(--color-gold);
-  color: var(--color-bg);
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  margin-top: 0.5rem;
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
-.btn-primary:hover { opacity: 0.9; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .auth-links {
   text-align: center;
@@ -137,6 +120,7 @@ async function handleRegister() {
   color: var(--color-text-muted);
   font-size: 0.85rem;
   text-decoration: none;
+  transition: color 0.2s;
 }
 .link:hover { color: var(--color-gold); }
 
