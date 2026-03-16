@@ -4,6 +4,7 @@
 -->
 <template>
   <div class="default-layout">
+    <AnimatedBackground variant="default" />
     <nav class="navbar">
       <RouterLink to="/app" class="nav-logo">Dead Man's</RouterLink>
 
@@ -65,6 +66,7 @@ import { RouterLink, RouterView, useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth.js";
 import { useWalletStore } from "../stores/wallet.js";
 import { useProfileStore } from "../stores/profile.js";
+import AnimatedBackground from "../components/ui/AnimatedBackground.vue";
 
 const authStore = useAuthStore();
 const walletStore = useWalletStore();
@@ -92,6 +94,8 @@ async function handleLogout() {
 .default-layout {
   min-height: 100vh;
   background: var(--color-bg);
+  position: relative;
+  overflow: hidden;
 }
 
 /* Navbar */
@@ -298,6 +302,8 @@ async function handleLogout() {
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 /* Responsive */

@@ -1,5 +1,6 @@
 <!--
   Reusable form input with label, error state, and variants.
+  Premium Wild West styling with gold focus glow.
   Usage: <BaseInput v-model="email" label="Email" type="email" placeholder="you@example.com" :error="errorMsg" />
 -->
 <template>
@@ -56,31 +57,57 @@ const sizeClass = computed(() => props.size !== "md" ? `input--${props.size}` : 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .field-label {
   font-size: 0.78rem;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.field:focus-within .field-label {
+  color: var(--color-gold);
+}
+
+.input-wrap {
+  position: relative;
 }
 
 .input {
   width: 100%;
-  padding: 0.6rem 0.75rem;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  background: linear-gradient(
+    180deg,
+    rgba(16, 10, 6, 0.9) 0%,
+    rgba(20, 12, 8, 0.95) 100%
+  );
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
   color: var(--color-text);
   font-size: 0.95rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.input::placeholder {
+  color: rgba(160, 128, 96, 0.5);
 }
 
 .input:focus {
   outline: none;
   border-color: var(--color-gold);
-  box-shadow: 0 0 0 2px rgba(212, 160, 32, 0.1);
+  box-shadow:
+    0 0 0 3px rgba(212, 160, 32, 0.1),
+    0 0 16px rgba(212, 160, 32, 0.08),
+    inset 0 0 8px rgba(212, 160, 32, 0.03);
+  background: linear-gradient(
+    180deg,
+    rgba(20, 12, 8, 0.95) 0%,
+    rgba(26, 16, 10, 0.98) 100%
+  );
 }
 
 .input:disabled {
@@ -96,7 +123,7 @@ const sizeClass = computed(() => props.size !== "md" ? `input--${props.size}` : 
   border-color: var(--color-error);
 }
 .field--error .input:focus {
-  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
 }
 
 .field-error {
