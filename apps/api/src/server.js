@@ -13,6 +13,7 @@ import { healthRouter } from "./routes/health.js";
 import { authRouter } from "./routes/auth.js";
 import { walletRouter } from "./routes/wallet.js";
 import { gameRouter } from "./routes/game.js";
+import { profileRouter } from "./routes/profile.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -43,6 +44,7 @@ app.use(healthRouter);
 app.use(authRouter);
 app.use(walletRouter);
 app.use(gameRouter);
+app.use(profileRouter);
 
 // Swagger UI - interactive API docs at /docs
 const swaggerDoc = YAML.load(join(__dirname, "..", "openapi.yaml"));

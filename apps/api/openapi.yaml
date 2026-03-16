@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Dead Man's Slot Machine API
   description: Wild West themed slot machine game API (simulation only, no real money)
-  version: 0.4.0
+  version: 0.5.0
   contact:
     name: Tin Minarik
     email: tinminarik00@gmail.com
@@ -633,7 +633,10 @@ paths:
     post:
       tags: [Game]
       summary: Spin the slot machine
-      description: Deducts bet from CHIPS wallet, generates a random result, credits any winnings. Uses ways-to-win system.
+      description: |
+        Deducts bet from CHIPS wallet, generates a random result, credits any winnings.
+        Supports auto-spin with `spins` parameter (1, 5, 10, or 100).
+        Single spin (spins=1) returns a flat result. Multi-spin returns an array of results plus a summary.
       operationId: spin
       security:
         - BearerAuth: []
@@ -652,6 +655,11 @@ paths:
                   type: number
                   description: Must be one of the game's betOptions
                   example: 20
+                spins:
+                  type: integer
+                  description: "Number of spins to perform (auto-spin). Default: 1"
+                  enum: [1, 5, 10, 100]
+                  default: 1
       responses:
         "200":
           description: Spin result
@@ -704,6 +712,79 @@ paths:
                   symbolMap:
                     type: object
                     description: "Map of symbolId → {emoji, name, type}"
+                  xpEarned:
+                    type: integer
+                    description: XP earned from this spin
+                  levelUp:
+                    type: object
+                    nullable: true
+                    description: "Level-up info (null if no level-up)"
+                    properties:
+                      newLevel:
+                        type: integer
+                      reward:
+                        type: integer
+                        description: CHIPS rewarded for leveling up
+        "200  (multi-spin)":
+          description: "Multi-spin result (when spins > 1)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  spins:
+                    type: array
+                    description: Individual spin results
+                    items:
+                      type: object
+                      properties:
+                        grid:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              type: string
+                        wins:
+                          type: array
+                          items:
+                            type: object
+                        totalWin:
+                          type: number
+                        totalBet:
+                          type: number
+                        symbolMap:
+                          type: object
+                  summary:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: Number of spins performed
+                      totalBet:
+                        type: number
+                      totalWin:
+                        type: number
+                      netResult:
+                        type: number
+                        description: totalWin - totalBet
+                      wins:
+                        type: integer
+                        description: Number of winning spins
+                      biggestWin:
+                        type: number
+                      xpEarned:
+                        type: integer
+                      levelUp:
+                        type: object
+                        nullable: true
+                        properties:
+                          newLevel:
+                            type: integer
+                          reward:
+                            type: integer
+                  balance:
+                    type: number
+                    description: CHIPS balance after all spins
         "400":
           description: Invalid bet or insufficient balance
           content:
@@ -712,3 +793,267 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           description: Game not found
+
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Get current user profile with stats
+      description: Returns user info, level, XP progress, play stats, and daily bonus availability.
+      operationId: getProfile
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                        format: email
+                      username:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+                      level:
+                        type: integer
+                        example: 3
+                      xp:
+                        type: integer
+                        example: 450
+                      xpProgress:
+                        type: integer
+                        description: XP earned within current level
+                      xpNeeded:
+                        type: integer
+                        description: Total XP needed to complete current level
+                      nextLevelXp:
+                        type: integer
+                        description: Cumulative XP required for next level
+                      stats:
+                        type: object
+                        properties:
+                          totalSpins:
+                            type: integer
+                          totalWins:
+                            type: integer
+                          totalWagered:
+                            type: string
+                          totalWon:
+                            type: string
+                          biggestWin:
+                            type: string
+                          favoriteGameId:
+                            type: string
+                            nullable: true
+                      dailyBonus:
+                        type: object
+                        properties:
+                          available:
+                            type: boolean
+                          nextAvailableAt:
+                            type: string
+                            format: date-time
+                            nullable: true
+                          reward:
+                            type: integer
+                            example: 100
+        "401":
+          description: Not authenticated
+
+  /profile/daily-bonus:
+    post:
+      tags: [Profile]
+      summary: Claim daily bonus
+      description: Awards 100 CHIPS and 25 XP. Can be claimed once every 24 hours.
+      operationId: claimDailyBonus
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Daily bonus claimed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Daily bonus claimed!"
+                  xpAwarded:
+                    type: integer
+                    example: 25
+                  chipsAwarded:
+                    type: integer
+                    example: 100
+                  levelUpRewards:
+                    type: integer
+                    description: Extra CHIPS from level-up (0 if no level-up)
+                  newLevel:
+                    type: integer
+                  newXp:
+                    type: integer
+                  balance:
+                    type: string
+                    description: CHIPS balance after bonus
+                  nextAvailableAt:
+                    type: string
+                    format: date-time
+        "400":
+          description: Already claimed within 24 hours
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /achievements:
+    get:
+      tags: [Profile]
+      summary: List all achievements with user progress
+      description: Returns all achievement definitions with the current user's progress, unlock status, and claim status.
+      operationId: getAchievements
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Achievement list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  achievements:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: first_spin
+                        name:
+                          type: string
+                          example: "First Spin"
+                        description:
+                          type: string
+                        category:
+                          type: string
+                          enum: [general, wins, levels, game]
+                        threshold:
+                          type: integer
+                        progress:
+                          type: integer
+                        unlocked:
+                          type: boolean
+                        claimed:
+                          type: boolean
+                        claimedAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        xpReward:
+                          type: integer
+                        chipsReward:
+                          type: integer
+
+  /achievements/{id}/claim:
+    post:
+      tags: [Profile]
+      summary: Claim an achievement reward
+      description: Claims CHIPS and XP reward for an unlocked achievement. Each achievement can only be claimed once.
+      operationId: claimAchievement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: first_spin
+      responses:
+        "200":
+          description: Achievement reward claimed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  achievementId:
+                    type: string
+                  name:
+                    type: string
+                  chipsAwarded:
+                    type: integer
+                  xpAwarded:
+                    type: integer
+                  levelUpRewards:
+                    type: integer
+                  newLevel:
+                    type: integer
+                  newXp:
+                    type: integer
+        "400":
+          description: Not unlocked or already claimed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Achievement not found
+
+  /leaderboard:
+    get:
+      tags: [Profile]
+      summary: Get leaderboard
+      description: "Returns top 20 players. Query param `type` selects ranking: totalWon (default), biggestWin, or level."
+      operationId: getLeaderboard
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [totalWon, biggestWin, level]
+            default: totalWon
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  leaderboard:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                        username:
+                          type: string
+                        level:
+                          type: integer
+                        totalSpins:
+                          type: integer
+                        totalWon:
+                          type: string
+                        biggestWin:
+                          type: string

@@ -16,6 +16,8 @@ import ForgotPasswordView from "../views/ForgotPasswordView.vue";
 import ResetPasswordView from "../views/ResetPasswordView.vue";
 import GameView from "../views/GameView.vue";
 import WalletView from "../views/WalletView.vue";
+import ProfileView from "../views/ProfileView.vue";
+import LeaderboardView from "../views/LeaderboardView.vue";
 
 const routes = [
   // Auth routes (no navbar)
@@ -39,6 +41,8 @@ const routes = [
     children: [
       { path: "", name: "game", component: GameView },
       { path: "wallet", name: "wallet", component: WalletView },
+      { path: "profile", name: "profile", component: ProfileView },
+      { path: "leaderboard", name: "leaderboard", component: LeaderboardView },
     ],
   },
 ];

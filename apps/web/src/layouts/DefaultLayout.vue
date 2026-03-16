@@ -11,10 +11,15 @@
       <div class="nav-links">
         <RouterLink to="/app" class="nav-link">Game</RouterLink>
         <RouterLink to="/app/wallet" class="nav-link">Wallet</RouterLink>
+        <RouterLink to="/app/profile" class="nav-link">Profile</RouterLink>
+        <RouterLink to="/app/leaderboard" class="nav-link">Ranks</RouterLink>
         <RouterLink to="/app/wallet" class="nav-balance" title="CHIPS balance">
           {{ formattedChips }} CHIPS
         </RouterLink>
-        <span class="nav-user">{{ authStore.user?.username }}</span>
+        <RouterLink to="/app/profile" class="nav-user-group">
+          <span class="nav-level-badge">Lv.{{ profileStore.level }}</span>
+          <span class="nav-user">{{ authStore.user?.username }}</span>
+        </RouterLink>
         <button class="nav-btn" @click="handleLogout">Logout</button>
       </div>
 
@@ -35,7 +40,12 @@
     <div class="mobile-menu" :class="{ 'mobile-menu--open': mobileOpen }" @click="mobileOpen = false">
       <RouterLink to="/app" class="mobile-link">Game</RouterLink>
       <RouterLink to="/app/wallet" class="mobile-link">Wallet</RouterLink>
-      <span class="mobile-user">{{ authStore.user?.username }}</span>
+      <RouterLink to="/app/profile" class="mobile-link">Profile</RouterLink>
+      <RouterLink to="/app/leaderboard" class="mobile-link">Leaderboard</RouterLink>
+      <span class="mobile-user">
+        <span class="nav-level-badge">Lv.{{ profileStore.level }}</span>
+        {{ authStore.user?.username }}
+      </span>
       <button class="mobile-logout" @click="handleLogout">Logout</button>
     </div>
 
@@ -50,9 +60,11 @@ import { ref, computed, onMounted } from "vue";
 import { RouterLink, RouterView, useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth.js";
 import { useWalletStore } from "../stores/wallet.js";
+import { useProfileStore } from "../stores/profile.js";
 
 const authStore = useAuthStore();
 const walletStore = useWalletStore();
+const profileStore = useProfileStore();
 const router = useRouter();
 const mobileOpen = ref(false);
 
@@ -62,6 +74,7 @@ const formattedChips = computed(() => {
 
 onMounted(() => {
   walletStore.fetchWallets();
+  profileStore.fetchProfile();
 });
 
 async function handleLogout() {
@@ -149,6 +162,23 @@ async function handleLogout() {
 .nav-btn:hover {
   border-color: var(--color-gold);
   color: var(--color-gold);
+}
+
+.nav-user-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+
+.nav-level-badge {
+  background: linear-gradient(135deg, #d4a020, #b8860b);
+  color: #1a0f0a;
+  padding: 0.15rem 0.45rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
 }
 
 /* Mobile-only elements */

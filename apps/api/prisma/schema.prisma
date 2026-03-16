@@ -15,7 +15,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- User: stores account info and hashed password ---
+// --- User: stores account info, hashed password, and progression stats ---
 model User {
   id        String   @id @default(uuid())
   email     String   @unique             // unique constraint = automatic index
@@ -24,10 +24,27 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  resetTokens   PasswordResetToken[]
-  refreshTokens RefreshToken[]
-  wallets       Wallet[]
-  transactions  Transaction[]
+  // --- Progression ---
+  xp             Int      @default(0)    // total experience points earned
+  level          Int      @default(1)    // current level (starts at 1)
+
+  // --- Aggregated stats (denormalized for fast profile/leaderboard queries) ---
+  totalSpins     Int      @default(0)
+  totalWins      Int      @default(0)    // number of winning spins
+  totalWagered   Decimal  @default(0) @db.Decimal(18, 2)
+  totalWon       Decimal  @default(0) @db.Decimal(18, 2)
+  biggestWin     Decimal  @default(0) @db.Decimal(18, 2)
+  favoriteGameId String?                 // game with most spins
+
+  // --- Daily bonus ---
+  lastDailyBonus DateTime?               // last time daily bonus was claimed
+
+  resetTokens    PasswordResetToken[]
+  refreshTokens  RefreshToken[]
+  wallets        Wallet[]
+  transactions   Transaction[]
+  achievements   UserAchievement[]
+  gameStats      UserGameStats[]
 }
 
 // --- PasswordResetToken: one-time token for "forgot password" flow ---
@@ -80,10 +97,13 @@ enum Currency {
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
-  CONVERSION_IN  // received from currency conversion
-  CONVERSION_OUT // spent on currency conversion
+  CONVERSION_IN    // received from currency conversion
+  CONVERSION_OUT   // spent on currency conversion
   BET
   WIN
+  DAILY_BONUS      // daily login bonus
+  LEVEL_REWARD     // CHIPS reward for leveling up
+  ACHIEVEMENT_REWARD // CHIPS reward for claiming an achievement
 }
 
 // --- Wallet: one per user per currency ---
@@ -121,4 +141,38 @@ model Transaction {
 
   @@index([userId])                      // transaction history per user
   @@index([walletId])                    // transaction history per wallet
+}
+
+// --- UserAchievement: tracks user progress toward each achievement ---
+// Achievement definitions live in code (lib/progression.js).
+// This table only stores per-user progress and claim status.
+model UserAchievement {
+  id            String    @id @default(uuid())
+  achievementId String                       // references key from ACHIEVEMENTS constant
+  progress      Int       @default(0)        // current progress toward threshold
+  unlockedAt    DateTime?                    // when threshold was reached
+  claimed       Boolean   @default(false)    // whether CHIPS/XP reward was claimed
+  claimedAt     DateTime?                    // when reward was claimed
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+
+  @@unique([userId, achievementId])          // one row per achievement per user
+  @@index([userId])                          // fast lookup of all user achievements
+}
+
+// --- UserGameStats: per-game spin/win statistics ---
+// Denormalized counters for fast profile display and game-specific achievements.
+model UserGameStats {
+  id         String  @id @default(uuid())
+  gameId     String                          // e.g. "dead-mans-gun"
+  spins      Int     @default(0)
+  wins       Int     @default(0)
+  totalWon   Decimal @default(0) @db.Decimal(18, 2)
+  biggestWin Decimal @default(0) @db.Decimal(18, 2)
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])                 // one row per game per user
+  @@index([userId])                          // fast lookup of all game stats for a user
 }

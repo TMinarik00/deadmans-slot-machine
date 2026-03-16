@@ -15,9 +15,12 @@ export const useGameStore = defineStore("game", () => {
   const symbolMap = ref({});
   const spinning = ref(false);
   const selectedBet = ref(null);
+  const selectedSpins = ref(1);
   const balance = ref(0);
   const error = ref(null);
   const lastFeature = ref(null);
+  const xpEarned = ref(0);
+  const levelUp = ref(null);
 
   // Getters
   const hasWin = computed(() => totalWin.value > 0);
@@ -51,6 +54,9 @@ export const useGameStore = defineStore("game", () => {
     totalWin.value = 0;
     symbolMap.value = {};
     lastFeature.value = null;
+    xpEarned.value = 0;
+    levelUp.value = null;
+    selectedSpins.value = 1;
     // Default to first bet option
     selectedBet.value = game.betOptions[0];
   }
@@ -62,6 +68,9 @@ export const useGameStore = defineStore("game", () => {
     totalWin.value = 0;
     symbolMap.value = {};
     lastFeature.value = null;
+    xpEarned.value = 0;
+    levelUp.value = null;
+    selectedSpins.value = 1;
   }
 
   async function doSpin() {
@@ -72,6 +81,8 @@ export const useGameStore = defineStore("game", () => {
     wins.value = [];
     totalWin.value = 0;
     lastFeature.value = null;
+    xpEarned.value = 0;
+    levelUp.value = null;
 
     try {
       const res = await api.post("/game/spin", {
@@ -88,6 +99,8 @@ export const useGameStore = defineStore("game", () => {
       symbolMap.value = data.symbolMap;
       balance.value = data.balance;
       lastFeature.value = data.featureTriggered;
+      xpEarned.value = data.xpEarned || 0;
+      levelUp.value = data.levelUp || null;
 
       return data;
     } catch (e) {
@@ -106,6 +119,10 @@ export const useGameStore = defineStore("game", () => {
     selectedBet.value = amount;
   }
 
+  function setSpins(count) {
+    selectedSpins.value = count;
+  }
+
   return {
     games,
     currentGame,
@@ -115,9 +132,12 @@ export const useGameStore = defineStore("game", () => {
     symbolMap,
     spinning,
     selectedBet,
+    selectedSpins,
     balance,
     error,
     lastFeature,
+    xpEarned,
+    levelUp,
     hasWin,
     winPositions,
     fetchGames,
@@ -126,5 +146,6 @@ export const useGameStore = defineStore("game", () => {
     doSpin,
     setSpinning,
     setBet,
+    setSpins,
   };
 });
