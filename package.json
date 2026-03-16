@@ -5,6 +5,8 @@
   "scripts": {
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
-    "dev": "npm run dev:api & npm run dev:web"
+    "dev": "npm run dev:api & npm run dev:web",
+    "lint": "npm run lint --workspace=apps/api && npm run lint --workspace=apps/web",
+    "build:web": "npm run build --workspace=apps/web"
   }
 }
