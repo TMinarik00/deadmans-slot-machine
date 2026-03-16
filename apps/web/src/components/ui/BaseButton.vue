@@ -18,7 +18,7 @@
 
 <script setup>
 defineProps({
-  variant: { type: String, default: "primary", validator: (v) => ["primary", "secondary", "ghost"].includes(v) },
+  variant: { type: String, default: "primary", validator: (v) => ["primary", "secondary", "ghost", "danger"].includes(v) },
   size: { type: String, default: "md", validator: (v) => ["sm", "md", "lg"].includes(v) },
   block: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
@@ -74,6 +74,21 @@ defineProps({
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--color-gold);
   color: var(--color-gold);
+}
+
+/* Danger - destructive action */
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+.btn-danger:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 /* Ghost - text only */

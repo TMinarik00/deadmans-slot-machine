@@ -113,6 +113,10 @@ async function handleLogout() {
   color: var(--color-gold);
   text-decoration: none;
   flex-shrink: 0;
+  transition: text-shadow 0.3s ease;
+}
+.nav-logo:hover {
+  text-shadow: 0 0 16px rgba(212, 160, 32, 0.5), 0 0 32px rgba(212, 160, 32, 0.2);
 }
 
 /* Desktop links */
@@ -127,10 +131,26 @@ async function handleLogout() {
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.2s;
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-gold);
+  border-radius: 1px;
+  transition: width 0.25s ease;
 }
 .nav-link:hover,
 .nav-link.router-link-active {
   color: var(--color-gold);
+}
+.nav-link:hover::after,
+.nav-link.router-link-active::after {
+  width: 100%;
 }
 
 .nav-balance {
@@ -229,7 +249,7 @@ async function handleLogout() {
   padding: 0;
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mobile-menu--open {

@@ -4,21 +4,28 @@
 -->
 <template>
   <div class="game-lobby">
-    <h1 class="lobby-title">The Saloon</h1>
-    <p class="lobby-subtitle">Choose your game, partner</p>
+    <h1 class="lobby-title fade-up">The Saloon</h1>
+    <p class="lobby-subtitle fade-up fade-up-1">Choose your game, partner</p>
 
     <div class="game-grid">
       <GameCard
-        v-for="game in games"
+        v-for="(game, idx) in games"
         :key="game.id"
         :title="game.name"
         :description="game.description"
         :theme="game.theme"
+        class="fade-up"
+        :class="`fade-up-${Math.min(idx + 2, 5)}`"
         @play="$emit('select', game)"
       >
         <template #visual>
           <div class="symbol-preview">
-            <span v-for="s in previewSymbols(game)" :key="s.id" class="preview-sym">{{ s.emoji }}</span>
+            <span
+              v-for="(s, sIdx) in previewSymbols(game)"
+              :key="s.id"
+              class="preview-sym"
+              :style="{ animationDelay: sIdx * 0.08 + 's' }"
+            >{{ s.emoji }}</span>
           </div>
         </template>
 
@@ -55,6 +62,7 @@ function previewSymbols(game) {
   font-size: 2.5rem;
   color: var(--color-gold);
   margin: 0;
+  text-shadow: 0 0 20px rgba(212, 160, 32, 0.2);
 }
 
 .lobby-subtitle {
@@ -82,7 +90,19 @@ function previewSymbols(game) {
 }
 
 .preview-sym {
-  transition: transform 0.2s;
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+/* Hover: symbols float up in stagger */
+.game-card:hover .preview-sym,
+:deep(.game-card:hover) .preview-sym {
+  animation: symbolFloat 0.6s ease infinite alternate;
+}
+
+@keyframes symbolFloat {
+  from { transform: translateY(0); }
+  to { transform: translateY(-5px); }
 }
 
 @media (max-width: 480px) {

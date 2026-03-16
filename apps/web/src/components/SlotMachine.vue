@@ -26,44 +26,42 @@
     </div>
 
     <!-- Auto-spin summary popup -->
-    <div v-if="showAutoSummary" class="auto-overlay" @click.self="showAutoSummary = false">
-      <div class="auto-summary">
-        <h3 class="auto-summary-title">Auto-Spin Complete</h3>
-        <div class="auto-summary-grid">
-          <div class="auto-stat">
-            <span class="auto-stat-label">Spins</span>
-            <span class="auto-stat-val">{{ autoSummary.count }}</span>
-          </div>
-          <div class="auto-stat">
-            <span class="auto-stat-label">Total Bet</span>
-            <span class="auto-stat-val">{{ autoSummary.totalBet.toLocaleString() }}</span>
-          </div>
-          <div class="auto-stat">
-            <span class="auto-stat-label">Total Won</span>
-            <span class="auto-stat-val auto-stat-val--gold">{{ autoSummary.totalWon.toLocaleString() }}</span>
-          </div>
-          <div class="auto-stat">
-            <span class="auto-stat-label">Net Result</span>
-            <span class="auto-stat-val" :class="autoSummary.net >= 0 ? 'auto-stat-val--gold' : 'auto-stat-val--red'">
-              {{ autoSummary.net >= 0 ? '+' : '' }}{{ autoSummary.net.toLocaleString() }}
-            </span>
-          </div>
-          <div class="auto-stat">
-            <span class="auto-stat-label">Wins</span>
-            <span class="auto-stat-val">{{ autoSummary.wins }} / {{ autoSummary.count }}</span>
-          </div>
-          <div class="auto-stat">
-            <span class="auto-stat-label">Biggest Win</span>
-            <span class="auto-stat-val auto-stat-val--gold">{{ autoSummary.biggestWin.toLocaleString() }}</span>
-          </div>
-          <div class="auto-stat">
-            <span class="auto-stat-label">XP Earned</span>
-            <span class="auto-stat-val">+{{ autoSummary.xpEarned }}</span>
-          </div>
+    <BaseModal v-if="showAutoSummary" size="sm" center @close="showAutoSummary = false">
+      <template #header>Auto-Spin Complete</template>
+      <div class="auto-summary-grid">
+        <div class="auto-stat">
+          <span class="auto-stat-label">Spins</span>
+          <span class="auto-stat-val">{{ autoSummary.count }}</span>
         </div>
-        <button class="auto-close-btn" @click="showAutoSummary = false">Close</button>
+        <div class="auto-stat">
+          <span class="auto-stat-label">Total Bet</span>
+          <span class="auto-stat-val">{{ autoSummary.totalBet.toLocaleString() }}</span>
+        </div>
+        <div class="auto-stat">
+          <span class="auto-stat-label">Total Won</span>
+          <span class="auto-stat-val auto-stat-val--gold">{{ autoSummary.totalWon.toLocaleString() }}</span>
+        </div>
+        <div class="auto-stat">
+          <span class="auto-stat-label">Net Result</span>
+          <span class="auto-stat-val" :class="autoSummary.net >= 0 ? 'auto-stat-val--gold' : 'auto-stat-val--red'">
+            {{ autoSummary.net >= 0 ? '+' : '' }}{{ autoSummary.net.toLocaleString() }}
+          </span>
+        </div>
+        <div class="auto-stat">
+          <span class="auto-stat-label">Wins</span>
+          <span class="auto-stat-val">{{ autoSummary.wins }} / {{ autoSummary.count }}</span>
+        </div>
+        <div class="auto-stat">
+          <span class="auto-stat-label">Biggest Win</span>
+          <span class="auto-stat-val auto-stat-val--gold">{{ autoSummary.biggestWin.toLocaleString() }}</span>
+        </div>
+        <div class="auto-stat">
+          <span class="auto-stat-label">XP Earned</span>
+          <span class="auto-stat-val">+{{ autoSummary.xpEarned }}</span>
+        </div>
       </div>
-    </div>
+      <BaseButton block @click="showAutoSummary = false">Close</BaseButton>
+    </BaseModal>
 
     <!-- XP / Level-up toast -->
     <div v-if="showXpToast" class="xp-toast" :class="{ 'xp-toast--levelup': gameStore.levelUp }">
@@ -183,6 +181,7 @@ import { useGameStore } from "../stores/game.js";
 import { useWalletStore } from "../stores/wallet.js";
 import { useProfileStore } from "../stores/profile.js";
 import BaseButton from "./ui/BaseButton.vue";
+import BaseModal from "./ui/BaseModal.vue";
 import BadgePill from "./ui/BadgePill.vue";
 
 const props = defineProps({ game: { type: Object, required: true } });
@@ -806,36 +805,7 @@ onUnmounted(() => { clearInterval(winTimer); clearTimeout(xpToastTimer); });
   background: rgba(248, 113, 113, 0.15);
 }
 
-/* ── Auto-spin summary popup ── */
-.auto-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  animation: fadeIn 0.2s ease;
-}
-
-.auto-summary {
-  background: var(--color-surface);
-  border: 2px solid var(--color-gold);
-  border-radius: 16px;
-  padding: 1.5rem;
-  max-width: 360px;
-  width: 90%;
-  animation: popIn 0.3s ease;
-}
-
-.auto-summary-title {
-  font-family: var(--font-display);
-  color: var(--color-gold);
-  text-align: center;
-  margin: 0 0 1rem;
-  font-size: 1.2rem;
-}
-
+/* ── Auto-spin summary ── */
 .auto-summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -867,34 +837,6 @@ onUnmounted(() => { clearInterval(winTimer); clearTimeout(xpToastTimer); });
 
 .auto-stat-val--gold { color: var(--color-gold); }
 .auto-stat-val--red { color: var(--color-error); }
-
-.auto-close-btn {
-  display: block;
-  width: 100%;
-  padding: 0.6rem;
-  border-radius: 10px;
-  border: 2px solid var(--color-gold);
-  background: linear-gradient(135deg, #d4a020, #b8860b);
-  color: #1a0f0a;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.auto-close-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(212, 160, 32, 0.35);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
 
 /* ── Paytable ── */
 .pt-toggle {

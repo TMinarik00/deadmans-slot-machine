@@ -4,160 +4,154 @@
   No real payment data is collected or sent anywhere.
 -->
 <template>
-  <Teleport to="body">
-    <div class="modal-overlay" @click.self="$emit('close')">
-      <div class="modal">
-        <!-- Header -->
-        <div class="modal-header">
-          <h2 class="modal-title">
-            {{ step === 'form' ? 'Deposit CHIPS' : step === 'processing' ? 'Processing...' : 'Deposit Complete' }}
-          </h2>
-          <button class="modal-close" @click="$emit('close')">&times;</button>
-        </div>
+  <BaseModal :center="step !== 'form'" @close="$emit('close')">
+    <template #header>
+      {{ step === 'form' ? 'Deposit CHIPS' : step === 'processing' ? 'Processing...' : 'Deposit Complete' }}
+    </template>
 
-        <!-- Step 1: Amount + method + details -->
-        <div v-if="step === 'form'" class="modal-body">
-          <!-- Amount -->
+    <!-- Step 1: Amount + method + details -->
+    <template v-if="step === 'form'">
+      <!-- Amount -->
+      <div class="field">
+        <label class="field-label">Amount (CHIPS)</label>
+        <input v-model.number="amount" type="number" min="1" step="1" class="input input--lg" placeholder="1000" />
+      </div>
+
+      <!-- Quick amounts -->
+      <div class="quick-amounts">
+        <button v-for="q in [500, 1000, 5000, 10000]" :key="q" class="quick-btn" :class="{ 'quick-btn--active': amount === q }" @click="amount = q">
+          {{ q.toLocaleString() }}
+        </button>
+      </div>
+
+      <!-- Method tabs -->
+      <div class="method-tabs">
+        <button class="method-tab" :class="{ 'method-tab--active': method === 'card' }" @click="method = 'card'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+            <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /><path d="M6 14h4" />
+          </svg>
+          Card
+        </button>
+        <button class="method-tab" :class="{ 'method-tab--active': method === 'crypto' }" @click="method = 'crypto'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9 8h4.5a2.5 2.5 0 010 5H9V8z" /><path d="M9 13h5a2.5 2.5 0 010 5H9v-5z" />
+            <path d="M11 6v2m2-2v2m-2 10v2m2-2v2" />
+          </svg>
+          Crypto
+        </button>
+      </div>
+
+      <!-- Card form -->
+      <div v-if="method === 'card'" class="payment-details">
+        <div class="card-preview">
+          <div class="card-chip"></div>
+          <div class="card-number">{{ cardDisplay }}</div>
+          <div class="card-bottom">
+            <div><div class="card-label">Card Holder</div><div class="card-value">{{ cardForm.name || 'YOUR NAME' }}</div></div>
+            <div><div class="card-label">Expires</div><div class="card-value">{{ cardForm.expiry || 'MM/YY' }}</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Cardholder Name</label>
+          <input v-model="cardForm.name" type="text" class="input" placeholder="John Doe" required autocomplete="off" />
+        </div>
+        <div class="field">
+          <label class="field-label">Card Number</label>
+          <input v-model="cardForm.number" type="text" class="input input--mono" placeholder="4242 4242 4242 4242"
+            maxlength="19" required autocomplete="off" @input="formatCardNumber" />
+        </div>
+        <div class="field-row">
           <div class="field">
-            <label class="field-label">Amount (CHIPS)</label>
-            <input v-model.number="amount" type="number" min="1" step="1" class="input input--lg" placeholder="1000" />
+            <label class="field-label">Expiry</label>
+            <input v-model="cardForm.expiry" type="text" class="input input--mono" placeholder="MM/YY"
+              maxlength="5" required autocomplete="off" @input="formatExpiry" />
           </div>
-
-          <!-- Quick amounts -->
-          <div class="quick-amounts">
-            <button v-for="q in [500, 1000, 5000, 10000]" :key="q" class="quick-btn" :class="{ 'quick-btn--active': amount === q }" @click="amount = q">
-              {{ q.toLocaleString() }}
-            </button>
+          <div class="field">
+            <label class="field-label">CVV</label>
+            <input v-model="cardForm.cvv" type="password" class="input input--mono" placeholder="***"
+              maxlength="4" required autocomplete="off" />
           </div>
-
-          <!-- Method tabs -->
-          <div class="method-tabs">
-            <button class="method-tab" :class="{ 'method-tab--active': method === 'card' }" @click="method = 'card'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                <rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /><path d="M6 14h4" />
-              </svg>
-              Card
-            </button>
-            <button class="method-tab" :class="{ 'method-tab--active': method === 'crypto' }" @click="method = 'crypto'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9 8h4.5a2.5 2.5 0 010 5H9V8z" /><path d="M9 13h5a2.5 2.5 0 010 5H9v-5z" />
-                <path d="M11 6v2m2-2v2m-2 10v2m2-2v2" />
-              </svg>
-              Crypto
-            </button>
-          </div>
-
-          <!-- Card form -->
-          <div v-if="method === 'card'" class="payment-details">
-            <div class="card-preview">
-              <div class="card-chip"></div>
-              <div class="card-number">{{ cardDisplay }}</div>
-              <div class="card-bottom">
-                <div><div class="card-label">Card Holder</div><div class="card-value">{{ cardForm.name || 'YOUR NAME' }}</div></div>
-                <div><div class="card-label">Expires</div><div class="card-value">{{ cardForm.expiry || 'MM/YY' }}</div></div>
-              </div>
-            </div>
-            <div class="field">
-              <label class="field-label">Cardholder Name</label>
-              <input v-model="cardForm.name" type="text" class="input" placeholder="John Doe" required autocomplete="off" />
-            </div>
-            <div class="field">
-              <label class="field-label">Card Number</label>
-              <input v-model="cardForm.number" type="text" class="input input--mono" placeholder="4242 4242 4242 4242"
-                maxlength="19" required autocomplete="off" @input="formatCardNumber" />
-            </div>
-            <div class="field-row">
-              <div class="field">
-                <label class="field-label">Expiry</label>
-                <input v-model="cardForm.expiry" type="text" class="input input--mono" placeholder="MM/YY"
-                  maxlength="5" required autocomplete="off" @input="formatExpiry" />
-              </div>
-              <div class="field">
-                <label class="field-label">CVV</label>
-                <input v-model="cardForm.cvv" type="password" class="input input--mono" placeholder="***"
-                  maxlength="4" required autocomplete="off" />
-              </div>
-            </div>
-            <div class="field">
-              <label class="field-label">Billing Address</label>
-              <input v-model="cardForm.address" type="text" class="input" placeholder="123 Main St, City, Country" required autocomplete="off" />
-            </div>
-          </div>
-
-          <!-- Crypto form -->
-          <div v-else class="payment-details">
-            <div class="crypto-select">
-              <label class="field-label">Select Cryptocurrency</label>
-              <div class="crypto-grid">
-                <button v-for="c in cryptos" :key="c.code" class="crypto-chip"
-                  :class="{ 'crypto-chip--active': cryptoCoin === c.code }" @click="cryptoCoin = c.code">
-                  <span class="crypto-symbol">{{ c.symbol }}</span>
-                  <span class="crypto-name">{{ c.code }}</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="field-label">Send payment to this {{ cryptoCoin }} address</label>
-              <div class="address-box">
-                <code class="address-text">{{ addresses[cryptoCoin] }}</code>
-                <button class="copy-btn" @click="copyAddress">{{ copied ? 'Copied' : 'Copy' }}</button>
-              </div>
-            </div>
-
-            <div class="qr-section">
-              <div class="qr-placeholder">
-                <svg viewBox="0 0 100 100" width="110" height="110">
-                  <rect width="100" height="100" fill="#fff"/>
-                  <rect x="5" y="5" width="25" height="25" fill="#000"/><rect x="8" y="8" width="19" height="19" fill="#fff"/><rect x="11" y="11" width="13" height="13" fill="#000"/>
-                  <rect x="70" y="5" width="25" height="25" fill="#000"/><rect x="73" y="8" width="19" height="19" fill="#fff"/><rect x="76" y="11" width="13" height="13" fill="#000"/>
-                  <rect x="5" y="70" width="25" height="25" fill="#000"/><rect x="8" y="73" width="19" height="19" fill="#fff"/><rect x="11" y="76" width="13" height="13" fill="#000"/>
-                  <rect x="70" y="70" width="25" height="25" fill="#000"/><rect x="73" y="73" width="19" height="19" fill="#fff"/><rect x="76" y="76" width="13" height="13" fill="#000"/>
-                  <rect x="35" y="5" width="5" height="5" fill="#000"/><rect x="45" y="5" width="5" height="5" fill="#000"/><rect x="55" y="15" width="5" height="5" fill="#000"/>
-                  <rect x="35" y="35" width="5" height="5" fill="#000"/><rect x="45" y="45" width="5" height="5" fill="#000"/><rect x="55" y="35" width="5" height="5" fill="#000"/>
-                  <rect x="5" y="45" width="5" height="5" fill="#000"/><rect x="25" y="45" width="5" height="5" fill="#000"/><rect x="85" y="45" width="5" height="5" fill="#000"/>
-                  <rect x="35" y="55" width="5" height="5" fill="#000"/><rect x="55" y="55" width="5" height="5" fill="#000"/><rect x="45" y="65" width="5" height="5" fill="#000"/>
-                </svg>
-              </div>
-              <span class="qr-hint">Scan to send {{ cryptoCoin }}</span>
-            </div>
-
-            <div class="network-info">
-              <div class="net-row"><span>Network</span><span>{{ networkNames[cryptoCoin] }}</span></div>
-              <div class="net-row"><span>Confirmations</span><span>{{ confirmations[cryptoCoin] }}</span></div>
-            </div>
-          </div>
-
-          <button class="btn-submit" :disabled="!amount || amount <= 0" @click="processDeposit">
-            {{ method === 'card' ? 'Pay & Deposit' : "I've Sent the Payment" }}
-          </button>
         </div>
-
-        <!-- Step 2: Processing -->
-        <div v-else-if="step === 'processing'" class="modal-body modal-body--center">
-          <div class="spinner"></div>
-          <p class="processing-text">{{ processingText }}</p>
-          <div class="progress-bar"><div class="progress-fill" :style="{ width: progress + '%' }"></div></div>
-        </div>
-
-        <!-- Step 3: Success -->
-        <div v-else-if="step === 'success'" class="modal-body modal-body--center">
-          <div class="success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" /></svg>
-          </div>
-          <h3 class="success-title">Deposit Successful</h3>
-          <p class="success-amount">+{{ amount?.toLocaleString() }} CHIPS</p>
-          <button class="btn-submit" @click="$emit('close')">Done</button>
+        <div class="field">
+          <label class="field-label">Billing Address</label>
+          <input v-model="cardForm.address" type="text" class="input" placeholder="123 Main St, City, Country" required autocomplete="off" />
         </div>
       </div>
-    </div>
-  </Teleport>
+
+      <!-- Crypto form -->
+      <div v-else class="payment-details">
+        <div class="crypto-select">
+          <label class="field-label">Select Cryptocurrency</label>
+          <div class="crypto-grid">
+            <button v-for="c in cryptos" :key="c.code" class="crypto-chip"
+              :class="{ 'crypto-chip--active': cryptoCoin === c.code }" @click="cryptoCoin = c.code">
+              <span class="crypto-symbol">{{ c.symbol }}</span>
+              <span class="crypto-name">{{ c.code }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Send payment to this {{ cryptoCoin }} address</label>
+          <div class="address-box">
+            <code class="address-text">{{ addresses[cryptoCoin] }}</code>
+            <button class="copy-btn" @click="copyAddress">{{ copied ? 'Copied' : 'Copy' }}</button>
+          </div>
+        </div>
+
+        <div class="qr-section">
+          <div class="qr-placeholder">
+            <svg viewBox="0 0 100 100" width="110" height="110">
+              <rect width="100" height="100" fill="#fff"/>
+              <rect x="5" y="5" width="25" height="25" fill="#000"/><rect x="8" y="8" width="19" height="19" fill="#fff"/><rect x="11" y="11" width="13" height="13" fill="#000"/>
+              <rect x="70" y="5" width="25" height="25" fill="#000"/><rect x="73" y="8" width="19" height="19" fill="#fff"/><rect x="76" y="11" width="13" height="13" fill="#000"/>
+              <rect x="5" y="70" width="25" height="25" fill="#000"/><rect x="8" y="73" width="19" height="19" fill="#fff"/><rect x="11" y="76" width="13" height="13" fill="#000"/>
+              <rect x="70" y="70" width="25" height="25" fill="#000"/><rect x="73" y="73" width="19" height="19" fill="#fff"/><rect x="76" y="76" width="13" height="13" fill="#000"/>
+              <rect x="35" y="5" width="5" height="5" fill="#000"/><rect x="45" y="5" width="5" height="5" fill="#000"/><rect x="55" y="15" width="5" height="5" fill="#000"/>
+              <rect x="35" y="35" width="5" height="5" fill="#000"/><rect x="45" y="45" width="5" height="5" fill="#000"/><rect x="55" y="35" width="5" height="5" fill="#000"/>
+              <rect x="5" y="45" width="5" height="5" fill="#000"/><rect x="25" y="45" width="5" height="5" fill="#000"/><rect x="85" y="45" width="5" height="5" fill="#000"/>
+              <rect x="35" y="55" width="5" height="5" fill="#000"/><rect x="55" y="55" width="5" height="5" fill="#000"/><rect x="45" y="65" width="5" height="5" fill="#000"/>
+            </svg>
+          </div>
+          <span class="qr-hint">Scan to send {{ cryptoCoin }}</span>
+        </div>
+
+        <div class="network-info">
+          <div class="net-row"><span>Network</span><span>{{ networkNames[cryptoCoin] }}</span></div>
+          <div class="net-row"><span>Confirmations</span><span>{{ confirmations[cryptoCoin] }}</span></div>
+        </div>
+      </div>
+
+      <BaseButton block :disabled="!amount || amount <= 0" @click="processDeposit">
+        {{ method === 'card' ? 'Pay & Deposit' : "I've Sent the Payment" }}
+      </BaseButton>
+    </template>
+
+    <!-- Step 2: Processing -->
+    <template v-else-if="step === 'processing'">
+      <div class="spinner"></div>
+      <p class="processing-text">{{ processingText }}</p>
+      <div class="progress-bar"><div class="progress-fill" :style="{ width: progress + '%' }"></div></div>
+    </template>
+
+    <!-- Step 3: Success -->
+    <template v-else-if="step === 'success'">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" /></svg>
+      </div>
+      <h3 class="success-title">Deposit Successful</h3>
+      <p class="success-amount">+{{ amount?.toLocaleString() }} CHIPS</p>
+      <BaseButton block @click="$emit('close')">Done</BaseButton>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
 import { useWalletStore } from "../stores/wallet.js";
+import BaseModal from "./ui/BaseModal.vue";
+import BaseButton from "./ui/BaseButton.vue";
 
 const emit = defineEmits(["close", "deposited"]);
 const walletStore = useWalletStore();
@@ -234,24 +228,6 @@ async function processDeposit() {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center;
-  z-index: 1000; padding: 1rem; backdrop-filter: blur(4px);
-}
-.modal {
-  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px;
-  width: 100%; max-width: 460px; max-height: 92vh; overflow-y: auto; animation: modal-in 0.2s ease-out;
-}
-@keyframes modal-in { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
-
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--color-border); }
-.modal-title { font-family: var(--font-display); font-size: 1.15rem; color: var(--color-gold); margin: 0; }
-.modal-close { background: none; border: none; color: var(--color-text-muted); font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
-.modal-close:hover { color: var(--color-text); }
-
-.modal-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.modal-body--center { align-items: center; text-align: center; padding: 2rem 1.5rem; }
-
 /* Fields */
 .field { display: flex; flex-direction: column; gap: 0.3rem; }
 .field-label { font-size: 0.78rem; color: var(--color-text-muted); }
@@ -259,9 +235,9 @@ async function processDeposit() {
 
 .input {
   width: 100%; padding: 0.6rem 0.75rem; background: var(--color-bg); border: 1px solid var(--color-border);
-  border-radius: 8px; color: var(--color-text); font-size: 0.95rem; transition: border-color 0.2s;
+  border-radius: 8px; color: var(--color-text); font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.input:focus { outline: none; border-color: var(--color-gold); }
+.input:focus { outline: none; border-color: var(--color-gold); box-shadow: 0 0 0 2px rgba(212, 160, 32, 0.1); }
 .input--lg { font-size: 1.4rem; font-weight: 700; text-align: center; padding: 0.7rem; }
 .input--mono { font-family: "Courier New", monospace; letter-spacing: 0.05em; }
 
@@ -288,6 +264,7 @@ async function processDeposit() {
 .card-preview {
   background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); border-radius: 14px;
   padding: 1.25rem; position: relative; aspect-ratio: 1.7; display: flex; flex-direction: column; justify-content: space-between;
+  overflow: hidden;
 }
 .card-preview::after { content: ""; position: absolute; top: -50%; right: -30%; width: 80%; height: 200%; background: radial-gradient(circle, rgba(212,160,32,0.08), transparent 70%); pointer-events: none; }
 .card-chip { width: 36px; height: 26px; background: linear-gradient(135deg, #d4a020, #b8860b); border-radius: 4px; }
@@ -323,14 +300,6 @@ async function processDeposit() {
 .net-row + .net-row { border-top: 1px solid var(--color-border); }
 .net-row span:last-child { color: var(--color-text); }
 
-/* Submit */
-.btn-submit {
-  width: 100%; padding: 0.75rem; background: var(--color-gold); color: var(--color-bg); border: none;
-  border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
-}
-.btn-submit:hover:not(:disabled) { opacity: 0.9; }
-.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-
 /* Processing */
 .spinner { width: 48px; height: 48px; border: 3px solid var(--color-border); border-top-color: var(--color-gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -345,8 +314,6 @@ async function processDeposit() {
 
 /* Responsive */
 @media (max-width: 480px) {
-  .modal { max-width: 100%; border-radius: 12px; }
-  .modal-body { padding: 1rem; }
   .card-preview { aspect-ratio: 1.6; padding: 1rem; }
   .card-number { font-size: 0.95rem; }
   .crypto-grid { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }

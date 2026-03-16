@@ -4,27 +4,35 @@
   (to prevent account enumeration).
 -->
 <template>
-  <div class="auth-card">
+  <div class="auth-card fade-up">
     <h2 class="card-title">Forgot Password</h2>
 
     <form v-if="!sent" @submit.prevent="handleSubmit" class="auth-form">
-      <p class="info-text">Enter your email and we'll send you a reset link.</p>
+      <p class="info-text fade-up fade-up-1">Enter your email and we'll send you a reset link.</p>
 
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" v-model="email" type="email" placeholder="cowboy@deadmans.com" required />
-      </div>
+      <BaseInput
+        v-model="email"
+        label="Email"
+        type="email"
+        placeholder="cowboy@deadmans.com"
+        :required="true"
+        class="fade-up fade-up-2"
+      />
 
-      <button type="submit" class="btn-primary" :disabled="loading">
+      <BaseButton block :loading="loading" class="fade-up fade-up-3">
         {{ loading ? "Sending..." : "Send Reset Link" }}
-      </button>
+      </BaseButton>
     </form>
 
-    <div v-else class="success-msg">
-      <p>If that email is registered, a reset link has been sent. Check your inbox (or Mailpit at localhost:8025).</p>
+    <div v-else class="success-msg fade-up">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40" class="success-icon">
+        <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
+      </svg>
+      <p>If that email is registered, a reset link has been sent.</p>
+      <p class="success-hint">Check your inbox (or Mailpit at localhost:8025).</p>
     </div>
 
-    <div class="auth-links">
+    <div class="auth-links fade-up fade-up-4">
       <RouterLink to="/login" class="link">Back to login</RouterLink>
     </div>
   </div>
@@ -34,6 +42,8 @@
 import { ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useAuthStore } from "../stores/auth.js";
+import BaseButton from "../components/ui/BaseButton.vue";
+import BaseInput from "../components/ui/BaseInput.vue";
 
 const authStore = useAuthStore();
 const email = ref("");
@@ -52,7 +62,7 @@ async function handleSubmit() {
 .auth-card {
   background: var(--color-surface);
   border: 2px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 2rem;
   box-shadow: 0 0 30px rgba(139, 105, 20, 0.2);
 }
@@ -75,43 +85,40 @@ async function handleSubmit() {
   color: var(--color-text-muted);
   font-size: 0.9rem;
   text-align: center;
+  margin: 0;
 }
-
-.field { display: flex; flex-direction: column; gap: 0.35rem; }
-.field label { font-size: 0.85rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 1px; }
-.field input {
-  padding: 0.7rem 0.9rem;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text);
-  font-size: 1rem;
-  outline: none;
-}
-.field input:focus { border-color: var(--color-gold); }
-
-.btn-primary {
-  padding: 0.75rem;
-  background: var(--color-gold);
-  color: var(--color-bg);
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 0.5rem;
-}
-.btn-primary:hover { opacity: 0.9; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .success-msg {
-  color: var(--color-success);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   text-align: center;
-  padding: 1rem;
+  padding: 1rem 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
 }
 
-.auth-links { text-align: center; margin-top: 1.25rem; }
-.link { color: var(--color-text-muted); font-size: 0.85rem; text-decoration: none; }
+.success-icon {
+  color: var(--color-success);
+}
+
+.success-hint {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.auth-links {
+  text-align: center;
+  margin-top: 1.25rem;
+}
+
+.link {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
 .link:hover { color: var(--color-gold); }
 
 @media (max-width: 480px) {

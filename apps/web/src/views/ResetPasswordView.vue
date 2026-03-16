@@ -3,30 +3,41 @@
   The token is in the URL query string (?token=xxx).
 -->
 <template>
-  <div class="auth-card">
+  <div class="auth-card fade-up">
     <h2 class="card-title">Reset Password</h2>
 
     <form v-if="!success" @submit.prevent="handleReset" class="auth-form">
-      <div class="field">
-        <label for="password">New Password</label>
-        <input id="password" v-model="password" type="password" placeholder="Min 8 characters" required minlength="8" />
-      </div>
+      <BaseInput
+        v-model="password"
+        label="New Password"
+        type="password"
+        placeholder="Min 8 characters"
+        :required="true"
+        class="fade-up fade-up-1"
+      />
 
-      <div class="field">
-        <label for="confirm">Confirm Password</label>
-        <input id="confirm" v-model="confirm" type="password" placeholder="Repeat password" required />
-      </div>
+      <BaseInput
+        v-model="confirm"
+        label="Confirm Password"
+        type="password"
+        placeholder="Repeat password"
+        :required="true"
+        class="fade-up fade-up-2"
+      />
 
       <p v-if="error" class="error-msg">{{ error }}</p>
 
-      <button type="submit" class="btn-primary" :disabled="loading">
+      <BaseButton block :loading="loading" class="fade-up fade-up-3">
         {{ loading ? "Resetting..." : "Reset Password" }}
-      </button>
+      </BaseButton>
     </form>
 
-    <div v-else class="success-msg">
+    <div v-else class="success-msg fade-up">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40" class="success-icon">
+        <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
+      </svg>
       <p>Password reset successfully!</p>
-      <RouterLink to="/login" class="link">Go to login</RouterLink>
+      <RouterLink to="/login" class="link link--gold">Go to login</RouterLink>
     </div>
   </div>
 </template>
@@ -35,6 +46,8 @@
 import { ref } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useAuthStore } from "../stores/auth.js";
+import BaseButton from "../components/ui/BaseButton.vue";
+import BaseInput from "../components/ui/BaseInput.vue";
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -69,7 +82,7 @@ async function handleReset() {
 .auth-card {
   background: var(--color-surface);
   border: 2px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 2rem;
   box-shadow: 0 0 30px rgba(139, 105, 20, 0.2);
 }
@@ -82,38 +95,52 @@ async function handleReset() {
   margin: 0 0 1.5rem;
 }
 
-.auth-form { display: flex; flex-direction: column; gap: 1rem; }
-.field { display: flex; flex-direction: column; gap: 0.35rem; }
-.field label { font-size: 0.85rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 1px; }
-.field input {
-  padding: 0.7rem 0.9rem;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.error-msg {
+  color: var(--color-error);
+  font-size: 0.82rem;
+  text-align: center;
+  margin: 0;
+  padding: 0.5rem;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 6px;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.success-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 1rem 0;
   color: var(--color-text);
-  font-size: 1rem;
-  outline: none;
+  font-size: 0.95rem;
 }
-.field input:focus { border-color: var(--color-gold); }
 
-.error-msg { color: var(--color-error); font-size: 0.85rem; text-align: center; margin: 0; }
-
-.btn-primary {
-  padding: 0.75rem;
-  background: var(--color-gold);
-  color: var(--color-bg);
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 0.5rem;
+.success-icon {
+  color: var(--color-success);
 }
-.btn-primary:hover { opacity: 0.9; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.success-msg { text-align: center; color: var(--color-success); }
-.success-msg .link { color: var(--color-gold); text-decoration: none; display: inline-block; margin-top: 1rem; }
+.link {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.link:hover { color: var(--color-gold); }
+.link--gold { color: var(--color-gold); font-weight: 600; }
 
 @media (max-width: 480px) {
   .auth-card { padding: 1.5rem; }
