@@ -36,6 +36,75 @@ const registerSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password must be at most 128 characters"),
+  confirmPassword: z
+    .string()
+    .min(1, "Please confirm your password"),
+  dateOfBirth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date of birth must be in YYYY-MM-DD format"),
+  acceptTerms: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Terms & Conditions" }),
+  }),
+  // P1
+  country: z.string().min(2).max(2).optional(),
+  // P2
+  firstName: z.string().max(50).optional(),
+  lastName: z.string().max(50).optional(),
+  phone: z.string().max(20).optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+}).refine((data) => {
+  const dob = new Date(data.dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age >= 18;
+}, {
+  message: "You must be at least 18 years old",
+  path: ["dateOfBirth"],
+});
+
+// --- POST /auth/register ---
+// Creates a new user account. Hashes the password before storing.
+authRouter.post("/auth/register", validate(registerSchema), async (req, res) => {
+  const { email, username, password, dateOfBirth, country, firstName, lastName, phone } = req.body;
+
+  // Check if email or username already taken
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ email }, { username }] },
+  });
+
+  if (existing) {
+    // Generic message - don't reveal which field is taken
+    return res.status(409).json({ error: "Email or username already in use" });
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      username,
+      password: hashedPassword,
+      dateOfBirth: new Date(dateOfBirth),
+      termsAcceptedAt: new Date(),
+      country: country || null,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      phone: phone || null,
+    },
+  });
+
+  const accessToken = generateAccessToken(user.id);
+
+  res.status(201).json({
+    user: { id: user.id, email: user.email, username: user.username },
+    accessToken,
+  });
 });
 
 const loginSchema = z.object({
@@ -53,35 +122,6 @@ const resetPasswordSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password must be at most 128 characters"),
-});
-
-// --- POST /auth/register ---
-// Creates a new user account. Hashes the password before storing.
-authRouter.post("/auth/register", validate(registerSchema), async (req, res) => {
-  const { email, username, password } = req.body;
-
-  // Check if email or username already taken
-  const existing = await prisma.user.findFirst({
-    where: { OR: [{ email }, { username }] },
-  });
-
-  if (existing) {
-    // Generic message - don't reveal which field is taken
-    return res.status(409).json({ error: "Email or username already in use" });
-  }
-
-  const hashedPassword = await hashPassword(password);
-
-  const user = await prisma.user.create({
-    data: { email, username, password: hashedPassword },
-  });
-
-  const accessToken = generateAccessToken(user.id);
-
-  res.status(201).json({
-    user: { id: user.id, email: user.email, username: user.username },
-    accessToken,
-  });
 });
 
 // --- POST /auth/login ---

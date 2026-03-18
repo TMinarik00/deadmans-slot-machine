@@ -29,6 +29,12 @@ profileRouter.get("/profile", requireAuth, async (req, res) => {
       id: true,
       email: true,
       username: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      dateOfBirth: true,
+      country: true,
+      kycStatus: true,
       createdAt: true,
       xp: true,
       level: true,
@@ -89,12 +95,53 @@ profileRouter.get("/profile", requireAuth, async (req, res) => {
 });
 
 // ===========================
-// PUT /profile - edit profile (change username/password)
+// POST /profile/kyc - submit KYC verification (simulated auto-approve)
+// ===========================
+profileRouter.post("/profile/kyc", requireAuth, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (user.kycStatus === "VERIFIED") {
+      return res.json({ message: "Already verified", kycStatus: "VERIFIED" });
+    }
+
+    // Set to PENDING first
+    await prisma.user.update({
+      where: { id: req.userId },
+      data: { kycStatus: "PENDING" },
+    });
+
+    // Simulate processing delay then auto-approve
+    setTimeout(async () => {
+      try {
+        await prisma.user.update({
+          where: { id: req.userId },
+          data: { kycStatus: "VERIFIED" },
+        });
+      } catch (e) {
+        console.error("KYC auto-approve error:", e);
+      }
+    }, 3000);
+
+    res.json({ message: "KYC submitted for verification", kycStatus: "PENDING" });
+  } catch (err) {
+    console.error("KYC submit error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ===========================
+// PUT /profile - edit profile (change username/password/personal info)
 // ===========================
 const editProfileSchema = z.object({
   username: z.string().min(3).max(20).optional(),
   currentPassword: z.string().min(1, "Current password is required"),
   newPassword: z.string().min(8).max(128).optional(),
+  firstName: z.string().max(50).optional().nullable(),
+  lastName: z.string().max(50).optional().nullable(),
+  phone: z.string().max(20).optional().nullable(),
+  country: z.string().length(2).optional().nullable(),
 });
 
 profileRouter.post("/profile/edit", requireAuth, async (req, res) => {
@@ -106,12 +153,7 @@ profileRouter.post("/profile/edit", requireAuth, async (req, res) => {
     });
   }
 
-  const { username, currentPassword, newPassword } = parsed.data;
-
-  // Must change at least one field
-  if (!username && !newPassword) {
-    return res.status(400).json({ error: "Provide a new username or new password to update." });
-  }
+  const { username, currentPassword, newPassword, firstName, lastName, phone, country } = parsed.data;
 
   try {
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
@@ -131,6 +173,10 @@ profileRouter.post("/profile/edit", requireAuth, async (req, res) => {
     const updateData = {};
     if (username && username !== user.username) updateData.username = username;
     if (newPassword) updateData.password = await hashPassword(newPassword);
+    if (firstName !== undefined) updateData.firstName = firstName || null;
+    if (lastName !== undefined) updateData.lastName = lastName || null;
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (country !== undefined) updateData.country = country || null;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ error: "No changes detected" });
@@ -139,7 +185,10 @@ profileRouter.post("/profile/edit", requireAuth, async (req, res) => {
     const updated = await prisma.user.update({
       where: { id: req.userId },
       data: updateData,
-      select: { id: true, email: true, username: true, createdAt: true },
+      select: {
+        id: true, email: true, username: true, createdAt: true,
+        firstName: true, lastName: true, phone: true, country: true,
+      },
     });
 
     res.json({ message: "Profile updated", user: updated });

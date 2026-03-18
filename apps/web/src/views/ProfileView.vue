@@ -28,7 +28,9 @@
         </div>
 
         <div class="poster-info">
-          <h2 class="outlaw-name">{{ authStore.user?.username }}</h2>
+          <h2 class="outlaw-name">
+            {{ displayName || authStore.user?.username }}
+          </h2>
           <p class="outlaw-email">{{ profileStore.profile?.email }}</p>
           <p class="outlaw-since">Outlaw since {{ joinDate }}</p>
         </div>
@@ -48,6 +50,32 @@
       <div class="reward-line">
         <span class="reward-text">REWARD</span>
         <span class="reward-amount">{{ formatNum(profileStore.stats.totalWon) }} CHIPS</span>
+      </div>
+    </div>
+
+    <!-- Personal Info Section -->
+    <div class="info-section fade-up fade-up-1" v-if="hasPersonalInfo">
+      <h3 class="section-title">
+        <svg class="section-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+        Personal Info
+      </h3>
+      <div class="info-grid">
+        <div class="info-item" v-if="profileStore.profile?.firstName || profileStore.profile?.lastName">
+          <span class="info-label">Full Name</span>
+          <span class="info-value">{{ [profileStore.profile?.firstName, profileStore.profile?.lastName].filter(Boolean).join(' ') || '—' }}</span>
+        </div>
+        <div class="info-item" v-if="profileStore.profile?.phone">
+          <span class="info-label">Phone</span>
+          <span class="info-value">{{ profileStore.profile?.phone }}</span>
+        </div>
+        <div class="info-item" v-if="profileStore.profile?.country">
+          <span class="info-label">Country</span>
+          <span class="info-value">{{ countryLabel(profileStore.profile?.country) }}</span>
+        </div>
+        <div class="info-item" v-if="profileStore.profile?.dateOfBirth">
+          <span class="info-label">Date of Birth</span>
+          <span class="info-value">{{ formatDate(profileStore.profile?.dateOfBirth) }}</span>
+        </div>
       </div>
     </div>
 
@@ -107,6 +135,29 @@
       </button>
     </div>
 
+    <!-- KYC Verification -->
+    <div class="kyc-section fade-up fade-up-3">
+      <div class="kyc-status-row">
+        <div class="kyc-status-info">
+          <svg class="kyc-status-shield" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          <div>
+            <span class="kyc-status-title">Identity Verification</span>
+            <span class="kyc-status-badge" :class="`kyc-badge--${profileStore.kycStatus.toLowerCase()}`">
+              {{ kycBadgeText }}
+            </span>
+          </div>
+        </div>
+        <button
+          v-if="profileStore.kycStatus !== 'VERIFIED'"
+          class="action-btn action-btn--edit"
+          style="flex: none; padding: 0.5rem 1rem;"
+          @click="showKycModal = true"
+        >
+          {{ profileStore.kycStatus === 'NONE' ? 'Verify Now' : 'Check Status' }}
+        </button>
+      </div>
+    </div>
+
     <!-- Danger zone -->
     <div class="danger-zone fade-up fade-up-4">
       <div class="danger-header">
@@ -124,21 +175,84 @@
     <p v-if="profileStore.error" class="error-msg">{{ profileStore.error }}</p>
 
     <!-- Edit Profile Modal -->
-    <BaseModal v-if="showEditModal" @close="closeEditModal">
+    <BaseModal v-if="showEditModal" @close="closeEditModal" size="md">
       <template #header>Edit Profile</template>
       <form @submit.prevent="submitEdit" class="edit-form">
-        <BaseInput
-          v-model="editForm.username"
-          label="Username"
-          :placeholder="authStore.user?.username"
-        />
-        <BaseInput
-          v-model="editForm.newPassword"
-          label="New Password"
-          type="password"
-          placeholder="Leave blank to keep current"
-        />
+
+        <!-- Personal Info Section -->
+        <div class="edit-section">
+          <h4 class="edit-section-title">
+            <svg class="edit-section-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+            Personal Info
+          </h4>
+          <div class="edit-row">
+            <BaseInput
+              v-model="editForm.firstName"
+              label="First Name"
+              type="text"
+              placeholder="John"
+              :maxlength="50"
+            />
+            <BaseInput
+              v-model="editForm.lastName"
+              label="Last Name"
+              type="text"
+              placeholder="Doe"
+              :maxlength="50"
+            />
+          </div>
+          <BaseInput
+            v-model="editForm.phone"
+            label="Phone"
+            type="tel"
+            placeholder="+387 61 234 567"
+            :maxlength="20"
+          />
+          <BaseSelect
+            v-model="editForm.country"
+            label="Country"
+            placeholder="Select your country"
+            :options="countryOptions"
+          />
+        </div>
+
         <div class="modal-divider"></div>
+
+        <!-- Account Section -->
+        <div class="edit-section">
+          <h4 class="edit-section-title">
+            <svg class="edit-section-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/></svg>
+            Account
+          </h4>
+          <BaseInput
+            v-model="editForm.username"
+            label="Username"
+            :placeholder="authStore.user?.username"
+          />
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <!-- Security Section -->
+        <div class="edit-section">
+          <h4 class="edit-section-title">
+            <svg class="edit-section-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+            Security
+          </h4>
+          <div>
+            <BaseInput
+              v-model="editForm.newPassword"
+              label="New Password"
+              type="password"
+              placeholder="Leave blank to keep current"
+            />
+            <PasswordStrength :password="editForm.newPassword" />
+          </div>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <!-- Confirm -->
         <BaseInput
           v-model="editForm.currentPassword"
           label="Current Password"
@@ -180,11 +294,14 @@
         </form>
       </div>
     </BaseModal>
+
+    <!-- KYC Modal -->
+    <KycModal v-if="showKycModal" @close="showKycModal = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth.js";
 import { useProfileStore } from "../stores/profile.js";
@@ -192,6 +309,9 @@ import { useWalletStore } from "../stores/wallet.js";
 import BaseProgressBar from "../components/ui/BaseProgressBar.vue";
 import BaseModal from "../components/ui/BaseModal.vue";
 import BaseInput from "../components/ui/BaseInput.vue";
+import BaseSelect from "../components/ui/BaseSelect.vue";
+import PasswordStrength from "../components/ui/PasswordStrength.vue";
+import KycModal from "../components/KycModal.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -208,13 +328,95 @@ let countdownTimer = null;
 const showEditModal = ref(false);
 const editLoading = ref(false);
 const editError = ref("");
-const editForm = reactive({ username: "", newPassword: "", currentPassword: "" });
+const editForm = reactive({
+  username: "",
+  newPassword: "",
+  currentPassword: "",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  country: "",
+});
+
+const countryOptions = [
+  { value: "BA", label: "🇧🇦 Bosnia & Herzegovina" },
+  { value: "HR", label: "🇭🇷 Croatia" },
+  { value: "RS", label: "🇷🇸 Serbia" },
+  { value: "ME", label: "🇲🇪 Montenegro" },
+  { value: "SI", label: "🇸🇮 Slovenia" },
+  { value: "MK", label: "🇲🇰 North Macedonia" },
+  { value: "AL", label: "🇦🇱 Albania" },
+  { value: "XK", label: "🇽🇰 Kosovo" },
+  { value: "AT", label: "🇦🇹 Austria" },
+  { value: "DE", label: "🇩🇪 Germany" },
+  { value: "CH", label: "🇨🇭 Switzerland" },
+  { value: "IT", label: "🇮🇹 Italy" },
+  { value: "FR", label: "🇫🇷 France" },
+  { value: "ES", label: "🇪🇸 Spain" },
+  { value: "PT", label: "🇵🇹 Portugal" },
+  { value: "GB", label: "🇬🇧 United Kingdom" },
+  { value: "IE", label: "🇮🇪 Ireland" },
+  { value: "NL", label: "🇳🇱 Netherlands" },
+  { value: "BE", label: "🇧🇪 Belgium" },
+  { value: "SE", label: "🇸🇪 Sweden" },
+  { value: "NO", label: "🇳🇴 Norway" },
+  { value: "DK", label: "🇩🇰 Denmark" },
+  { value: "FI", label: "🇫🇮 Finland" },
+  { value: "PL", label: "🇵🇱 Poland" },
+  { value: "CZ", label: "🇨🇿 Czech Republic" },
+  { value: "SK", label: "🇸🇰 Slovakia" },
+  { value: "HU", label: "🇭🇺 Hungary" },
+  { value: "RO", label: "🇷🇴 Romania" },
+  { value: "BG", label: "🇧🇬 Bulgaria" },
+  { value: "GR", label: "🇬🇷 Greece" },
+  { value: "TR", label: "🇹🇷 Turkey" },
+  { value: "US", label: "🇺🇸 United States" },
+  { value: "CA", label: "🇨🇦 Canada" },
+  { value: "AU", label: "🇦🇺 Australia" },
+  { value: "NZ", label: "🇳🇿 New Zealand" },
+  { value: "BR", label: "🇧🇷 Brazil" },
+  { value: "MX", label: "🇲🇽 Mexico" },
+  { value: "JP", label: "🇯🇵 Japan" },
+  { value: "KR", label: "🇰🇷 South Korea" },
+  { value: "IN", label: "🇮🇳 India" },
+];
+
+const displayName = computed(() => {
+  const p = profileStore.profile;
+  const parts = [p?.firstName, p?.lastName].filter(Boolean);
+  return parts.length ? parts.join(" ") : "";
+});
+
+const hasPersonalInfo = computed(() => {
+  const p = profileStore.profile;
+  return p?.firstName || p?.lastName || p?.phone || p?.country || p?.dateOfBirth;
+});
+
+function countryLabel(code) {
+  if (!code) return "—";
+  const found = countryOptions.find(o => o.value === code);
+  return found ? found.label : code;
+}
+
+function formatDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 // Delete modal
 const showDeleteModal = ref(false);
 const deleteLoading = ref(false);
 const deleteError = ref("");
 const deletePassword = ref("");
+const showKycModal = ref(false);
+
+const kycBadgeText = computed(() => {
+  const s = profileStore.kycStatus;
+  if (s === "VERIFIED") return "✓ Verified";
+  if (s === "PENDING") return "⏳ Pending";
+  if (s === "REJECTED") return "✗ Rejected";
+  return "Not Verified";
+});
 
 const joinDate = computed(() => {
   const d = profileStore.profile?.createdAt;
@@ -265,12 +467,23 @@ async function handleLogout() {
 }
 
 // Edit profile
+// Pre-populate the form when modal opens
+watch(showEditModal, (open) => {
+  if (open) {
+    const p = profileStore.profile;
+    editForm.username = authStore.user?.username || "";
+    editForm.firstName = p?.firstName || "";
+    editForm.lastName = p?.lastName || "";
+    editForm.phone = p?.phone || "";
+    editForm.country = p?.country || "";
+    editForm.newPassword = "";
+    editForm.currentPassword = "";
+  }
+});
+
 function closeEditModal() {
   showEditModal.value = false;
   editError.value = "";
-  editForm.username = "";
-  editForm.newPassword = "";
-  editForm.currentPassword = "";
 }
 
 async function submitEdit() {
@@ -287,8 +500,13 @@ async function submitEdit() {
   editLoading.value = true;
   try {
     const payload = { currentPassword: editForm.currentPassword };
-    if (editForm.username) payload.username = editForm.username;
+    if (editForm.username && editForm.username !== authStore.user?.username) payload.username = editForm.username;
     if (editForm.newPassword) payload.newPassword = editForm.newPassword;
+    // Include personal info fields (send even if empty to allow clearing)
+    payload.firstName = editForm.firstName || null;
+    payload.lastName = editForm.lastName || null;
+    payload.phone = editForm.phone || null;
+    payload.country = editForm.country || null;
     await profileStore.editProfile(payload);
     // Refresh auth user data
     await authStore.fetchMe();
@@ -562,6 +780,79 @@ onUnmounted(() => clearInterval(countdownTimer));
   text-shadow: 0 1px 4px rgba(212, 160, 32, 0.25);
 }
 
+/* ── Personal Info Section ── */
+.info-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  background: rgba(16, 10, 6, 0.6);
+  border: 1px solid rgba(139, 105, 20, 0.12);
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.info-item:hover {
+  border-color: rgba(212, 160, 32, 0.25);
+}
+
+.info-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: 0.88rem;
+  color: var(--color-text);
+}
+
+/* ── Edit Form Sections ── */
+.edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edit-section-title {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  color: var(--color-gold);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  letter-spacing: 0.04em;
+}
+
+.edit-section-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+}
+
+.edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
 /* ── Daily Bonus Card ── */
 .daily-card {
   display: flex;
@@ -769,6 +1060,73 @@ onUnmounted(() => clearInterval(countdownTimer));
 .action-btn--logout:hover {
   background: rgba(248, 113, 113, 0.12);
   border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* ── KYC Section ── */
+.kyc-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.kyc-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kyc-status-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.kyc-status-shield {
+  width: 28px;
+  height: 28px;
+  color: var(--color-gold);
+  flex-shrink: 0;
+}
+
+.kyc-status-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--color-text);
+}
+
+.kyc-status-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 0.15rem;
+}
+
+.kyc-badge--none {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--color-error);
+}
+
+.kyc-badge--pending {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.kyc-badge--verified {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.kyc-badge--rejected {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--color-error);
 }
 
 /* ── Danger zone ── */

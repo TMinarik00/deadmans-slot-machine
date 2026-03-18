@@ -16,11 +16,18 @@ export const useAuthStore = defineStore("auth", () => {
   const isAuthenticated = computed(() => !!user.value);
 
   // Actions
-  async function register(email, username, password) {
+  async function register({ email, username, password, confirmPassword, dateOfBirth, acceptTerms, country, firstName, lastName, phone }) {
     loading.value = true;
     error.value = null;
     try {
-      const res = await api.post("/auth/register", { email, username, password });
+      const res = await api.post("/auth/register", {
+        email, username, password, confirmPassword,
+        dateOfBirth, acceptTerms,
+        country: country || undefined,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        phone: phone || undefined,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
       setTokens(data.accessToken, null);

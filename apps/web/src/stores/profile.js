@@ -70,10 +70,10 @@ export const useProfileStore = defineStore("profile", () => {
     }
   }
 
-  async function editProfile({ username, currentPassword, newPassword }) {
+  async function editProfile(payload) {
     error.value = null;
     try {
-      const res = await api.post("/profile/edit", { username, currentPassword, newPassword });
+      const res = await api.post("/profile/edit", payload);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update profile");
       await fetchProfile();
@@ -125,6 +125,24 @@ export const useProfileStore = defineStore("profile", () => {
     }
   }
 
+  // KYC
+  const kycStatus = computed(() => profile.value?.kycStatus ?? "NONE");
+
+  async function submitKyc() {
+    error.value = null;
+    try {
+      const res = await api.post("/profile/kyc");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "KYC submission failed");
+      // Update local status immediately
+      if (profile.value) profile.value.kycStatus = data.kycStatus;
+      return data;
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  }
+
   return {
     profile,
     achievements,
@@ -140,6 +158,7 @@ export const useProfileStore = defineStore("profile", () => {
     stats,
     dailyBonus,
     canClaimDaily,
+    kycStatus,
     fetchProfile,
     fetchAchievements,
     fetchLeaderboard,
@@ -147,5 +166,6 @@ export const useProfileStore = defineStore("profile", () => {
     claimAchievement,
     editProfile,
     deleteProfile,
+    submitKyc,
   };
 });
