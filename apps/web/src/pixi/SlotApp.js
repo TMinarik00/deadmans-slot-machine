@@ -1219,7 +1219,7 @@ export class SlotApp {
       duration: 0.8,
       ease: "power2.out",
       onUpdate: () => {
-        this.winText.text = `WIN  ${Math.round(counter.val).toLocaleString()}  CHIPS`;
+        this.winText.text = `${Math.round(counter.val).toLocaleString()}  CHIPS`;
       },
     });
 
