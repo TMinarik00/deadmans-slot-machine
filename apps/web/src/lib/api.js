@@ -70,5 +70,6 @@ export const api = {
     apiFetch(path, { method: "POST", body: JSON.stringify(body) }),
   put: (path, body) =>
     apiFetch(path, { method: "PUT", body: JSON.stringify(body) }),
-  delete: (path) => apiFetch(path, { method: "DELETE" }),
+  delete: (path, body) =>
+    apiFetch(path, { method: "DELETE", body: body ? JSON.stringify(body) : undefined }),
 };

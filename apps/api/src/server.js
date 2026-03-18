@@ -1,6 +1,7 @@
 // Entry point for the Dead Mans Slot Machine API.
 // Sets up Express with security middleware, mounts Swagger UI, and starts listening.
 
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";

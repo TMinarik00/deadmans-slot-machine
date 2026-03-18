@@ -12,7 +12,6 @@
     <SlotMachine
       v-if="gameStore.currentGame"
       :game="gameStore.currentGame"
-      @back="gameStore.leaveGame()"
     />
 
     <!-- Game lobby (no game selected) -->

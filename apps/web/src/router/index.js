@@ -18,6 +18,7 @@ import GameView from "../views/GameView.vue";
 import WalletView from "../views/WalletView.vue";
 import ProfileView from "../views/ProfileView.vue";
 import LeaderboardView from "../views/LeaderboardView.vue";
+import AchievementsView from "../views/AchievementsView.vue";
 
 const routes = [
   // Auth routes (no navbar)
@@ -42,6 +43,7 @@ const routes = [
       { path: "", name: "game", component: GameView },
       { path: "wallet", name: "wallet", component: WalletView },
       { path: "profile", name: "profile", component: ProfileView },
+      { path: "achievements", name: "achievements", component: AchievementsView },
       { path: "leaderboard", name: "leaderboard", component: LeaderboardView },
     ],
   },
