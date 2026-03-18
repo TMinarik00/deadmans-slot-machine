@@ -74,6 +74,12 @@ watch(
   padding: 0.5rem 0;
 }
 
+@media (max-width: 600px) {
+  .game-view {
+    padding: 0;
+  }
+}
+
 .load-error {
   text-align: center;
   color: var(--color-error);

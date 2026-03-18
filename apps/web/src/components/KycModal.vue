@@ -118,7 +118,7 @@ import { ref, computed } from "vue";
 import { useProfileStore } from "../stores/profile.js";
 import BaseModal from "./ui/BaseModal.vue";
 
-const emit = defineEmits(["close"]);
+defineEmits(["close"]);
 const profileStore = useProfileStore();
 
 const step = ref(1);

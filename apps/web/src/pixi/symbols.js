@@ -286,3 +286,6 @@ export function getTexture(textures, gameId, symbolId) {
   const key = map[symbolId];
   return key && textures[key] ? textures[key] : null;
 }
+
+// Export raw SVGs and symbol map for use in Vue components (e.g. PaytableModal)
+export { SYMBOL_SVGS };
