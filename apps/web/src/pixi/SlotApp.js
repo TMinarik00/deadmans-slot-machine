@@ -192,8 +192,8 @@ export class SlotApp {
     this.reelFrameH =
       rows * this.cellH + 2 * (FRAME_BORDER + FRAME_PAD);
     this.ctrlY = REEL_Y + this.reelFrameH + 14;
-    // Taller control area on mobile for bigger touch targets
-    const ctrlH = this.isMobile ? 130 : 105;
+    // Compact stepper controls on mobile, chip layout on desktop
+    const ctrlH = this.isMobile ? 140 : 105;
     this.autoY = this.ctrlY + ctrlH + 6;
     this.canvasH = this.autoY + 38 + 10;
     this.symSize = Math.min(this.reelW, this.cellH) * 0.72;
@@ -654,7 +654,7 @@ export class SlotApp {
     const stage = this.app.stage;
     const y = this.ctrlY;
     const mob = this.isMobile;
-    const ctrlH = mob ? 130 : 105;
+    const ctrlH = mob ? 140 : 105;
 
     // Controls background — subtle dark area, no bordered panel
     const bg = new Graphics();
@@ -665,104 +665,254 @@ export class SlotApp {
     bg.fill({ color: t.frameBorder, alpha: 0.2 });
     stage.addChild(bg);
 
-    // ── Left section: BET + AUTO ──
-    const leftX = FRAME_X + 16;
+    if (mob) {
+      // ═══ MOBILE: Two-row casino layout ═══
+      // Row 1: Info strip  — BET value | BALANCE | AUTO value
+      // Row 2: Action row  — [◀ ▶] BET | [SPIN] | [◀ ▶] AUTO
 
-    // BET label
-    const betFontSize = mob ? 11 : 9;
-    const betLabel = new Text({ text: "BET", style: uiStyle(betFontSize, 0x806040, "800") });
-    betLabel.x = leftX;
-    betLabel.y = y + 8;
-    stage.addChild(betLabel);
+      const infoY = y + 4;     // Info strip top
+      const actionY = y + 40;  // Action row top
+      const centerX = W / 2;
+      const leftX = FRAME_X + 70;
+      const rightX = W - FRAME_X - 70;
 
-    // Bet chips (circular casino style) — bigger on mobile
-    this.betChips = [];
-    const chipSize = mob ? 38 : 30;
-    const chipGap = mob ? 8 : 6;
-    const chipFontSize = mob ? 12 : 10;
-    const chipCenterY = mob ? y + 38 : y + 32;
-    this.game.betOptions.forEach((val, i) => {
-      const chip = this._createCasinoChip(
-        leftX + i * (chipSize + chipGap) + chipSize / 2,
-        chipCenterY,
-        chipSize / 2,
-        String(val),
-        i === 0,
-        t,
-        chipFontSize,
-      );
-      chip.container.on("pointerdown", () => {
-        if (this._spinning) return;
-        this._currentBet = val;
-        this._updateBetChips();
-        this.onBetChange?.(val);
+      // ── Info strip background ──
+      bg.roundRect(FRAME_X + 2, infoY, FRAME_W - 4, 34, 6);
+      bg.fill({ color: 0x000000, alpha: 0.15 });
+
+      // ── BET info (left) ──
+      this._betIndex = 0;
+      const betOpts = this.game.betOptions;
+
+      const betInfoLabel = new Text({ text: "BET", style: uiStyle(12, 0x806040, "700") });
+      betInfoLabel.anchor.set(0.5, 0.5);
+      betInfoLabel.x = leftX - 26;
+      betInfoLabel.y = infoY + 17;
+      stage.addChild(betInfoLabel);
+
+      this._betValueText = new Text({
+        text: String(betOpts[0]),
+        style: uiStyle(22, t.accent, "800"),
       });
-      stage.addChild(chip.container);
-      this.betChips.push(chip);
-    });
+      this._betValueText.anchor.set(0.5, 0.5);
+      this._betValueText.x = leftX + 14;
+      this._betValueText.y = infoY + 17;
+      stage.addChild(this._betValueText);
 
-    // AUTO label
-    const autoLabelY = mob ? y + 66 : y + 55;
-    const autoLabel = new Text({ text: "AUTO", style: uiStyle(betFontSize, 0x806040, "800") });
-    autoLabel.x = leftX;
-    autoLabel.y = autoLabelY;
-    stage.addChild(autoLabel);
+      // ── BALANCE info (center) ──
+      const balInfoLabel = new Text({ text: "BALANCE", style: uiStyle(10, 0x806040, "700") });
+      balInfoLabel.anchor.set(0.5, 0.5);
+      balInfoLabel.x = centerX - 36;
+      balInfoLabel.y = infoY + 17;
+      stage.addChild(balInfoLabel);
 
-    // Auto-spin chips (pill style) — bigger on mobile
-    const autoOpts = [1, 5, 10, 100];
-    const pillW = mob ? 56 : 44;
-    const pillH = mob ? 30 : 24;
-    const pillGap = mob ? 60 : 50;
-    const pillFontSize = mob ? 13 : 11;
-    const pillY = mob ? y + 85 : y + 70;
-    this.autoChips = [];
-    autoOpts.forEach((val, i) => {
-      const label = val === 1 ? "1x" : val + "x";
-      const chip = this._createPillChip(
-        leftX + i * pillGap,
-        pillY,
-        pillW,
-        pillH,
-        label,
-        val === 1,
-        t,
-        pillFontSize,
-      );
-      chip.container.on("pointerdown", () => {
-        if (this._spinning) return;
-        this._currentAutoCount = val;
-        this._updateAutoChips();
-        this.onAutoChange?.(val);
+      this.balanceText = new Text({
+        text: "0",
+        style: uiStyle(22, t.accent, "800"),
       });
-      stage.addChild(chip.container);
-      this.autoChips.push({ ...chip, value: val });
+      this.balanceText.anchor.set(0.5, 0.5);
+      this.balanceText.x = centerX + 28;
+      this.balanceText.y = infoY + 17;
+      stage.addChild(this.balanceText);
+
+      // ── AUTO info (right) ──
+      const autoOpts = [1, 5, 10, 100];
+      this._autoIndex = 0;
+
+      const autoInfoLabel = new Text({ text: "AUTO", style: uiStyle(12, 0x806040, "700") });
+      autoInfoLabel.anchor.set(0.5, 0.5);
+      autoInfoLabel.x = rightX - 20;
+      autoInfoLabel.y = infoY + 17;
+      stage.addChild(autoInfoLabel);
+
+      this._autoValueText = new Text({
+        text: "1x",
+        style: uiStyle(22, t.accent, "800"),
+      });
+      this._autoValueText.anchor.set(0.5, 0.5);
+      this._autoValueText.x = rightX + 22;
+      this._autoValueText.y = infoY + 17;
+      stage.addChild(this._autoValueText);
+
+      // ── Action row: BET arrows (left) ──
+      const arrowY = actionY + 48; // vertically centered with spin
+
+      const betLeft = this._createArrowButton(leftX - 24, arrowY, "<", t);
+      betLeft.on("pointerdown", () => {
+        if (this._spinning) return;
+        this._betIndex = (this._betIndex - 1 + betOpts.length) % betOpts.length;
+        this._currentBet = betOpts[this._betIndex];
+        this._updateStepperDisplay();
+        this.onBetChange?.(this._currentBet);
+      });
+      stage.addChild(betLeft);
+
+      const betRight = this._createArrowButton(leftX + 24, arrowY, ">", t);
+      betRight.on("pointerdown", () => {
+        if (this._spinning) return;
+        this._betIndex = (this._betIndex + 1) % betOpts.length;
+        this._currentBet = betOpts[this._betIndex];
+        this._updateStepperDisplay();
+        this.onBetChange?.(this._currentBet);
+      });
+      stage.addChild(betRight);
+
+      // ── Action row: SPIN button (center) ──
+      this._buildSpinButton(actionY, t, stage);
+
+      // ── Action row: AUTO arrows (right) ──
+      const autoLeft = this._createArrowButton(rightX - 24, arrowY, "<", t);
+      autoLeft.on("pointerdown", () => {
+        if (this._spinning) return;
+        this._autoIndex = (this._autoIndex - 1 + autoOpts.length) % autoOpts.length;
+        this._currentAutoCount = autoOpts[this._autoIndex];
+        this._updateStepperDisplay();
+        this.onAutoChange?.(this._currentAutoCount);
+      });
+      stage.addChild(autoLeft);
+
+      const autoRight = this._createArrowButton(rightX + 24, arrowY, ">", t);
+      autoRight.on("pointerdown", () => {
+        if (this._spinning) return;
+        this._autoIndex = (this._autoIndex + 1) % autoOpts.length;
+        this._currentAutoCount = autoOpts[this._autoIndex];
+        this._updateStepperDisplay();
+        this.onAutoChange?.(this._currentAutoCount);
+      });
+      stage.addChild(autoRight);
+
+      // Mobile doesn't use chip arrays — create empty arrays for compatibility
+      this.betChips = [];
+      this.autoChips = [];
+
+    } else {
+      // ═══ DESKTOP: Original chip layout ═══
+      const leftX = FRAME_X + 16;
+
+      // BET label
+      const betLabel = new Text({ text: "BET", style: uiStyle(9, 0x806040, "800") });
+      betLabel.x = leftX;
+      betLabel.y = y + 8;
+      stage.addChild(betLabel);
+
+      // Bet chips (circular casino style)
+      this.betChips = [];
+      const chipSize = 30;
+      const chipGap = 6;
+      this.game.betOptions.forEach((val, i) => {
+        const chip = this._createCasinoChip(
+          leftX + i * (chipSize + chipGap) + chipSize / 2,
+          y + 32,
+          chipSize / 2,
+          String(val),
+          i === 0,
+          t,
+          10,
+        );
+        chip.container.on("pointerdown", () => {
+          if (this._spinning) return;
+          this._currentBet = val;
+          this._updateBetChips();
+          this.onBetChange?.(val);
+        });
+        stage.addChild(chip.container);
+        this.betChips.push(chip);
+      });
+
+      // AUTO label
+      const autoLabel = new Text({ text: "AUTO", style: uiStyle(9, 0x806040, "800") });
+      autoLabel.x = leftX;
+      autoLabel.y = y + 55;
+      stage.addChild(autoLabel);
+
+      // Auto-spin chips (pill style)
+      const autoOpts = [1, 5, 10, 100];
+      this.autoChips = [];
+      autoOpts.forEach((val, i) => {
+        const label = val === 1 ? "1x" : val + "x";
+        const chip = this._createPillChip(
+          leftX + i * 50,
+          y + 70,
+          44,
+          24,
+          label,
+          val === 1,
+          t,
+          11,
+        );
+        chip.container.on("pointerdown", () => {
+          if (this._spinning) return;
+          this._currentAutoCount = val;
+          this._updateAutoChips();
+          this.onAutoChange?.(val);
+        });
+        stage.addChild(chip.container);
+        this.autoChips.push({ ...chip, value: val });
+      });
+
+      // ── Center: SPIN button ──
+      this._buildSpinButton(y, t, stage);
+
+      // ── Right section: BALANCE ──
+      const rightX = W - FRAME_X - 16;
+
+      const balLabel = new Text({
+        text: "BALANCE",
+        style: uiStyle(9, 0x806040, "800"),
+      });
+      balLabel.anchor.set(1, 0);
+      balLabel.x = rightX;
+      balLabel.y = y + 22;
+      stage.addChild(balLabel);
+
+      this.balanceText = new Text({
+        text: "0",
+        style: headerStyle(22, t.accent),
+      });
+      this.balanceText.anchor.set(1, 0);
+      this.balanceText.x = rightX;
+      this.balanceText.y = y + 40;
+      stage.addChild(this.balanceText);
+    }
+  }
+
+  _updateStepperDisplay() {
+    if (this._betValueText) {
+      this._betValueText.text = String(this._currentBet);
+    }
+    if (this._autoValueText) {
+      this._autoValueText.text =
+        this._currentAutoCount === 1 ? "1x" : this._currentAutoCount + "x";
+    }
+  }
+
+  _createArrowButton(cx, cy, direction, theme) {
+    const ct = new Container();
+    ct.x = cx;
+    ct.y = cy;
+    ct.eventMode = "static";
+    ct.cursor = "pointer";
+
+    // Circle background
+    const bg = new Graphics();
+    bg.circle(0, 0, 28);
+    bg.fill({ color: theme.frameBorder, alpha: 0.3 });
+    bg.stroke({ color: theme.frameBorder, alpha: 0.4, width: 1 });
+    ct.addChild(bg);
+
+    // Arrow text
+    const arrow = new Text({
+      text: direction,
+      style: uiStyle(22, 0xc8a050, "700"),
     });
+    arrow.anchor.set(0.5, 0.5);
+    ct.addChild(arrow);
 
-    // ── Center: SPIN button ──
-    this._buildSpinButton(y, t, stage);
+    // Hover/press effect
+    ct.on("pointerover", () => { ct.alpha = 0.8; });
+    ct.on("pointerout", () => { ct.alpha = 1; });
 
-    // ── Right section: BALANCE ──
-    const rightX = W - FRAME_X - 16;
-    const balLabelY = mob ? y + 30 : y + 22;
-    const balValueY = mob ? y + 50 : y + 40;
-
-    const balLabel = new Text({
-      text: "BALANCE",
-      style: uiStyle(mob ? 11 : 9, 0x806040, "800"),
-    });
-    balLabel.anchor.set(1, 0);
-    balLabel.x = rightX;
-    balLabel.y = balLabelY;
-    stage.addChild(balLabel);
-
-    this.balanceText = new Text({
-      text: "0",
-      style: headerStyle(mob ? 26 : 22, t.accent),
-    });
-    this.balanceText.anchor.set(1, 0);
-    this.balanceText.x = rightX;
-    this.balanceText.y = balValueY;
-    stage.addChild(this.balanceText);
+    return ct;
   }
 
   _buildSpinButton(ctrlY, t, stage) {
