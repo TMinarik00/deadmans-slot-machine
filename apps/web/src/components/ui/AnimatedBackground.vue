@@ -93,10 +93,10 @@ function seededRandom(seed) {
 const isMobile =
   typeof window !== "undefined" && window.innerWidth < 700;
 
-const particleCount = computed(() => (isMobile ? 18 : 45));
-const emberCount = computed(() => (isMobile ? 8 : 20));
-const iconCount = computed(() => (isMobile ? 8 : 20));
-const smokeCount = computed(() => (isMobile ? 3 : 6));
+const particleCount = computed(() => (isMobile ? 32 : 45));
+const emberCount = computed(() => (isMobile ? 16 : 20));
+const iconCount = computed(() => (isMobile ? 14 : 20));
+const smokeCount = computed(() => (isMobile ? 5 : 6));
 
 // ── Dust particles: grid-placed with jitter for even spread ──
 const particles = computed(() => {

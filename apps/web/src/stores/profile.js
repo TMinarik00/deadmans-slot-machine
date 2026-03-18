@@ -11,6 +11,7 @@ export const useProfileStore = defineStore("profile", () => {
   const achievements = ref([]);
   const leaderboard = ref([]);
   const leaderboardType = ref("totalWon");
+  const leaderboardPeriod = ref("allTime");
   const loading = ref(false);
   const error = ref(null);
 
@@ -55,16 +56,44 @@ export const useProfileStore = defineStore("profile", () => {
     }
   }
 
-  async function fetchLeaderboard(type = "totalWon") {
+  async function fetchLeaderboard(type = "totalWon", period = "allTime") {
     leaderboardType.value = type;
+    leaderboardPeriod.value = period;
     error.value = null;
     try {
-      const res = await api.get(`/leaderboard?type=${type}`);
+      const res = await api.get(`/leaderboard?type=${type}&period=${period}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load leaderboard");
       leaderboard.value = data.leaderboard;
     } catch (e) {
       error.value = e.message;
+    }
+  }
+
+  async function editProfile({ username, currentPassword, newPassword }) {
+    error.value = null;
+    try {
+      const res = await api.post("/profile/edit", { username, currentPassword, newPassword });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update profile");
+      await fetchProfile();
+      return data;
+    } catch (e) {
+      error.value = e.message;
+      throw e;
+    }
+  }
+
+  async function deleteProfile(password) {
+    error.value = null;
+    try {
+      const res = await api.post("/profile/delete", { password });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete account");
+      return data;
+    } catch (e) {
+      error.value = e.message;
+      throw e;
     }
   }
 
@@ -101,6 +130,7 @@ export const useProfileStore = defineStore("profile", () => {
     achievements,
     leaderboard,
     leaderboardType,
+    leaderboardPeriod,
     loading,
     error,
     level,
@@ -115,5 +145,7 @@ export const useProfileStore = defineStore("profile", () => {
     fetchLeaderboard,
     claimDailyBonus,
     claimAchievement,
+    editProfile,
+    deleteProfile,
   };
 });

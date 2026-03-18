@@ -71,7 +71,8 @@ import { IconRevolver, IconSkull, IconStar, IconBullet } from "../components/ico
 
 <style scoped>
 .auth-layout {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -332,6 +333,65 @@ import { IconRevolver, IconSkull, IconStar, IconBullet } from "../components/ico
   .brand-mark__icon {
     width: 22px;
     height: 22px;
+  }
+}
+
+/* ── Short viewport scaling (laptops, short browsers) ── */
+@media (max-height: 750px) {
+  .auth-container {
+    padding: 1rem 1.5rem;
+  }
+  .auth-header {
+    margin-bottom: 1rem;
+  }
+  .logo {
+    font-size: 2.2rem;
+  }
+  .brand-mark {
+    margin-top: 0.25rem;
+  }
+  .brand-mark__icon {
+    width: 22px;
+    height: 22px;
+  }
+  .ornament-line {
+    margin-bottom: 0.4rem;
+  }
+  .ornament-line--bottom {
+    margin-top: 0.25rem;
+  }
+  .logo-decor {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-height: 620px) {
+  .auth-container {
+    padding: 0.5rem 1.25rem;
+  }
+  .auth-header {
+    margin-bottom: 0.5rem;
+  }
+  .logo {
+    font-size: 1.8rem;
+  }
+  .logo-decor {
+    width: 22px;
+    height: 22px;
+  }
+  .brand-mark {
+    display: none;
+  }
+  .ornament-line {
+    margin-bottom: 0.3rem;
+  }
+  .ornament-line--bottom {
+    margin-top: 0.15rem;
+  }
+  .subtitle-label {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
   }
 }
 </style>

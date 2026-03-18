@@ -460,3 +460,48 @@ html {
     gap: 0.5rem;
   }
 }
+
+/* Short viewport - compact auth card so nothing overflows */
+@media (max-height: 750px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
+  .auth-card-title {
+    font-size: 1.35rem;
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.25rem;
+  }
+  .auth-card-icon {
+    margin-bottom: 0.25rem;
+  }
+  .auth-card-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+  .auth-form {
+    gap: 0.7rem;
+    margin-top: 0.6rem;
+  }
+  .auth-links {
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+  }
+}
+
+@media (max-height: 620px) {
+  .auth-card {
+    padding: 1rem 1.25rem;
+  }
+  .auth-card-title {
+    font-size: 1.15rem;
+    padding-bottom: 0.4rem;
+  }
+  .auth-card-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .auth-form {
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+  }
+}

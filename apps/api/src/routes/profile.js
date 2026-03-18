@@ -2,8 +2,10 @@
 // All routes require authentication.
 
 import { Router } from "express";
+import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
+import { hashPassword, verifyPassword } from "../lib/password.js";
 import {
   xpForLevel,
   levelReward,
@@ -84,6 +86,106 @@ profileRouter.get("/profile", requireAuth, async (req, res) => {
       },
     },
   });
+});
+
+// ===========================
+// PUT /profile - edit profile (change username/password)
+// ===========================
+const editProfileSchema = z.object({
+  username: z.string().min(3).max(20).optional(),
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(8).max(128).optional(),
+});
+
+profileRouter.post("/profile/edit", requireAuth, async (req, res) => {
+  const parsed = editProfileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "Validation failed",
+      details: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })),
+    });
+  }
+
+  const { username, currentPassword, newPassword } = parsed.data;
+
+  // Must change at least one field
+  if (!username && !newPassword) {
+    return res.status(400).json({ error: "Provide a new username or new password to update." });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Verify current password
+    const valid = await verifyPassword(currentPassword, user.password);
+    if (!valid) return res.status(401).json({ error: "Current password is incorrect" });
+
+    // Check username uniqueness if changing
+    if (username && username !== user.username) {
+      const existing = await prisma.user.findUnique({ where: { username } });
+      if (existing) return res.status(409).json({ error: "Username already taken" });
+    }
+
+    // Build update
+    const updateData = {};
+    if (username && username !== user.username) updateData.username = username;
+    if (newPassword) updateData.password = await hashPassword(newPassword);
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: "No changes detected" });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.userId },
+      data: updateData,
+      select: { id: true, email: true, username: true, createdAt: true },
+    });
+
+    res.json({ message: "Profile updated", user: updated });
+  } catch (err) {
+    console.error("Edit profile error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ===========================
+// DELETE /profile - delete account (requires password confirmation)
+// ===========================
+const deleteProfileSchema = z.object({
+  password: z.string().min(1, "Password is required"),
+});
+
+profileRouter.post("/profile/delete", requireAuth, async (req, res) => {
+  const parsed = deleteProfileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Password is required to delete your account" });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Verify password
+    const valid = await verifyPassword(parsed.data.password, user.password);
+    if (!valid) return res.status(401).json({ error: "Incorrect password" });
+
+    // Delete everything in a transaction (cascade)
+    await prisma.$transaction(async (tx) => {
+      await tx.userAchievement.deleteMany({ where: { userId: req.userId } });
+      await tx.userGameStats.deleteMany({ where: { userId: req.userId } });
+      await tx.transaction.deleteMany({ where: { userId: req.userId } });
+      await tx.wallet.deleteMany({ where: { userId: req.userId } });
+      await tx.refreshToken.deleteMany({ where: { userId: req.userId } });
+      await tx.passwordResetToken.deleteMany({ where: { userId: req.userId } });
+      await tx.user.delete({ where: { id: req.userId } });
+    });
+
+    res.json({ message: "Account deleted permanently" });
+  } catch (err) {
+    console.error("Delete profile error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ===========================
@@ -384,38 +486,104 @@ profileRouter.post("/achievements/:id/claim", requireAuth, async (req, res) => {
 });
 
 // ===========================
-// GET /leaderboard - top players
+// GET /leaderboard - top players (supports period filtering)
 // ===========================
 profileRouter.get("/leaderboard", requireAuth, async (req, res) => {
   const type = req.query.type || "totalWon";
+  const period = req.query.period || "allTime";
   const validTypes = ["totalWon", "biggestWin", "level"];
+  const validPeriods = ["daily", "weekly", "monthly", "allTime"];
 
   if (!validTypes.includes(type)) {
     return res.status(400).json({ error: `Invalid type. Options: ${validTypes.join(", ")}` });
   }
+  if (!validPeriods.includes(period)) {
+    return res.status(400).json({ error: `Invalid period. Options: ${validPeriods.join(", ")}` });
+  }
 
-  const orderBy = type === "level"
-    ? [{ level: "desc" }, { xp: "desc" }]
-    : { [type]: "desc" };
+  // All-time: use aggregated User fields (fast)
+  if (period === "allTime") {
+    const orderBy = type === "level"
+      ? [{ level: "desc" }, { xp: "desc" }]
+      : { [type]: "desc" };
 
-  const players = await prisma.user.findMany({
-    orderBy,
-    take: 20,
-    select: {
-      id: true,
-      username: true,
-      level: true,
-      totalSpins: true,
-      totalWon: true,
-      biggestWin: true,
+    const players = await prisma.user.findMany({
+      orderBy,
+      take: 20,
+      select: {
+        id: true,
+        username: true,
+        level: true,
+        totalSpins: true,
+        totalWon: true,
+        biggestWin: true,
+      },
+    });
+
+    const leaderboard = players.map((player, index) => ({
+      rank: index + 1,
+      ...player,
+    }));
+
+    return res.json({ type, period, leaderboard });
+  }
+
+  // Time-based: compute from transactions within the window
+  const now = new Date();
+  let since;
+  if (period === "daily") since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  else if (period === "weekly") since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  else since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // monthly
+
+  // Level leaderboard is always all-time (levels don't reset)
+  if (type === "level") {
+    const players = await prisma.user.findMany({
+      orderBy: [{ level: "desc" }, { xp: "desc" }],
+      take: 20,
+      select: { id: true, username: true, level: true, totalSpins: true, totalWon: true, biggestWin: true },
+    });
+    const leaderboard = players.map((player, index) => ({ rank: index + 1, ...player }));
+    return res.json({ type, period, leaderboard });
+  }
+
+  // Aggregate WIN transactions within the period
+  const winData = await prisma.transaction.groupBy({
+    by: ["userId"],
+    where: {
+      type: "WIN",
+      createdAt: { gte: since },
     },
+    _sum: { amount: true },
+    _max: { amount: true },
+    _count: { _all: true },
   });
 
-  // Add rank
-  const leaderboard = players.map((player, index) => ({
-    rank: index + 1,
-    ...player,
-  }));
+  // Sort properly based on type
+  const sorted = [...winData].sort((a, b) => {
+    if (type === "totalWon") return Number(b._sum.amount || 0) - Number(a._sum.amount || 0);
+    return Number(b._max.amount || 0) - Number(a._max.amount || 0);
+  }).slice(0, 20);
 
-  res.json({ type, leaderboard });
+  // Fetch user details for the top players
+  const userIds = sorted.map((w) => w.userId);
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, username: true, level: true, totalSpins: true, totalWon: true, biggestWin: true },
+  });
+  const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
+
+  const leaderboard = sorted.map((w, index) => {
+    const user = userMap[w.userId] || {};
+    return {
+      rank: index + 1,
+      id: w.userId,
+      username: user.username || "Unknown",
+      level: user.level || 1,
+      totalSpins: user.totalSpins || 0,
+      totalWon: type === "totalWon" ? String(w._sum.amount || 0) : String(user.totalWon || 0),
+      biggestWin: type === "biggestWin" ? String(w._max.amount || 0) : String(user.biggestWin || 0),
+    };
+  });
+
+  res.json({ type, period, leaderboard });
 });
