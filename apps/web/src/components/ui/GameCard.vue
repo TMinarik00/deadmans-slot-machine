@@ -1,27 +1,37 @@
 <!--
-  Reusable game card for the lobby.
-  Fixed-height layout ensures title, description, and play button
-  are always in the same position regardless of content length.
+  Premium game card for the lobby.
+  Features a full-bleed hero image with gradient overlay,
+  title, description, badges, and a glowing PLAY button.
 -->
 <template>
   <div class="game-card" :class="`card-theme-${theme}`" @click="$emit('play')">
-    <!-- Visual section: symbol preview -->
-    <div class="card-visual">
-      <slot name="visual" />
+    <!-- Hero image with overlay -->
+    <div class="card-hero">
+      <img v-if="image" :src="image" :alt="title" class="card-hero-img" loading="lazy" />
+      <div class="card-hero-overlay"></div>
+      <div class="card-hero-shine"></div>
+
+      <!-- Floating badges on hero -->
+      <div class="card-hero-badges">
+        <slot name="badges" />
+      </div>
     </div>
 
-    <!-- Body: title + description (flex:1 pushes footer down) -->
+    <!-- Body: title + description -->
     <div class="card-body">
       <h3 class="card-title">{{ title }}</h3>
       <p class="card-desc">{{ description }}</p>
     </div>
 
-    <!-- Footer: badges + play button always at the bottom -->
+    <!-- Footer: symbol preview + play button -->
     <div class="card-footer">
-      <div class="card-badges">
-        <slot name="badges" />
+      <div class="card-symbols" v-if="$slots.visual">
+        <slot name="visual" />
       </div>
-      <BaseButton variant="primary" class="card-play-btn">PLAY</BaseButton>
+      <BaseButton variant="primary" class="card-play-btn">
+        <svg class="play-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>
+        PLAY NOW
+      </BaseButton>
     </div>
   </div>
 </template>
@@ -33,6 +43,7 @@ defineProps({
   title: { type: String, required: true },
   description: { type: String, required: true },
   theme: { type: String, default: "default" },
+  image: { type: String, default: "" },
 });
 defineEmits(["play"]);
 </script>
@@ -42,54 +53,106 @@ defineEmits(["play"]);
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   height: 100%;
-  min-height: 320px;
+  min-height: 420px;
+  position: relative;
 }
 
 .game-card:hover {
   border-color: var(--color-gold);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(212, 160, 32, 0.15);
+  transform: translateY(-8px) scale(1.01);
+  box-shadow:
+    0 20px 60px rgba(212, 160, 32, 0.15),
+    0 0 0 1px rgba(212, 160, 32, 0.2);
 }
 
-/* Theme accent stripe */
+/* Hero image section */
+.card-hero {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.card-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.game-card:hover .card-hero-img {
+  transform: scale(1.08);
+}
+
+.card-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 30%,
+    rgba(26, 15, 10, 0.4) 60%,
+    rgba(26, 15, 10, 0.95) 100%
+  );
+  pointer-events: none;
+}
+
+.card-hero-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+
+.game-card:hover .card-hero-shine {
+  opacity: 1;
+}
+
+.card-hero-badges {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+/* Theme accent stripe on top */
 .card-theme-gunslinger { border-top: 3px solid #e74c3c; }
 .card-theme-treasure { border-top: 3px solid #f1c40f; }
-.card-theme-desert { border-top: 3px solid #3498db; }
-.card-theme-canyon { border-top: 3px solid #e67e22; }
+.card-theme-desert { border-top: 3px solid #60a5fa; }
 
-/* Visual section */
-.card-visual {
-  padding: 1rem 1rem 0.5rem;
-  display: flex;
-  justify-content: center;
-  min-height: 60px;
-}
-
-/* Body - flex:1 fills available space, pushing footer to bottom */
+/* Body */
 .card-body {
   flex: 1;
-  padding: 0 1rem;
+  padding: 0.75rem 1rem 0.25rem;
   text-align: center;
 }
 
 .card-title {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   color: var(--color-gold);
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.35rem;
   line-height: 1.2;
+  text-shadow: 0 0 20px rgba(212, 160, 32, 0.15);
 }
 
 .card-desc {
   font-size: 0.82rem;
   color: var(--color-text-muted);
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -97,28 +160,40 @@ defineEmits(["play"]);
   overflow: hidden;
 }
 
-/* Footer - always at the bottom */
+/* Footer */
 .card-footer {
-  padding: 0.75rem 1rem 1rem;
+  padding: 0.6rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
-.card-badges {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  justify-content: center;
+.card-symbols {
+  width: 100%;
 }
 
 .card-play-btn {
   width: 100%;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  position: relative;
+  overflow: hidden;
+}
+
+.play-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 0.3rem;
+}
+
+.game-card:hover .card-play-btn {
+  box-shadow: 0 4px 20px rgba(212, 160, 32, 0.3);
 }
 
 @media (max-width: 480px) {
-  .game-card { min-height: 280px; }
-  .card-title { font-size: 1.1rem; }
+  .game-card { min-height: 360px; }
+  .card-hero { height: 160px; }
+  .card-title { font-size: 1.15rem; }
 }
 </style>

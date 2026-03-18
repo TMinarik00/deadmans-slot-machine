@@ -18,14 +18,72 @@
 
     <!-- Auto-spin summary modal -->
     <BaseModal v-if="showAutoSummary" size="sm" center @close="showAutoSummary = false">
-      <template #header>Auto-Spin Complete</template>
-      <div class="auto-summary-grid">
-        <div class="auto-stat" v-for="stat in summaryStats" :key="stat.label">
-          <span class="auto-stat-label">{{ stat.label }}</span>
-          <span class="auto-stat-val" :class="stat.cls">{{ stat.value }}</span>
+      <template #header>
+        <span class="asr-header-text">Auto-Spin Complete</span>
+      </template>
+
+      <!-- Hero: big total won -->
+      <div class="asr-hero">
+        <div class="asr-hero-glow"></div>
+        <svg class="asr-trophy" viewBox="0 0 48 48" fill="none">
+          <path d="M14 8h20v4c0 8-4 14-10 16-6-2-10-8-10-16V8z" fill="url(#tg)"/>
+          <path d="M10 8H6c0 6 2 10 6 12v-4c-2-2-2-4-2-8z" fill="#B8860B"/>
+          <path d="M38 8h4c0 6-2 10-6 12v-4c2-2 2-4 2-8z" fill="#B8860B"/>
+          <rect x="20" y="28" width="8" height="6" rx="1" fill="#B8860B"/>
+          <rect x="16" y="34" width="16" height="4" rx="2" fill="#DAA520"/>
+          <defs><linearGradient id="tg" x1="24" y1="8" x2="24" y2="28">
+            <stop stop-color="#FFD700"/><stop offset="1" stop-color="#B8860B"/>
+          </linearGradient></defs>
+        </svg>
+        <div class="asr-hero-label">Total Won</div>
+        <div class="asr-hero-amount" :class="{ 'asr-hero-amount--zero': autoSummary.totalWon === 0 }">
+          {{ autoSummary.totalWon.toLocaleString() }}
+          <span class="asr-hero-chip">CHIPS</span>
         </div>
       </div>
-      <BaseButton block @click="showAutoSummary = false">Close</BaseButton>
+
+      <!-- Net result badge -->
+      <div class="asr-net" :class="autoSummary.net >= 0 ? 'asr-net--profit' : 'asr-net--loss'">
+        <svg class="asr-net-icon" viewBox="0 0 16 16" fill="currentColor">
+          <path v-if="autoSummary.net >= 0" d="M8 1l2.5 5 5.5.8-4 3.9.9 5.3L8 13.5 3.1 16l.9-5.3-4-3.9L5.5 6z"/>
+          <path v-else d="M8 1a7 7 0 100 14A7 7 0 008 1zm3 9.5L9.5 12 8 10.5 6.5 12 5 10.5 6.5 9 5 7.5 6.5 6 8 7.5 9.5 6 11 7.5 9.5 9z"/>
+        </svg>
+        <span>{{ autoSummary.net >= 0 ? '+' : '' }}{{ autoSummary.net.toLocaleString() }} net</span>
+      </div>
+
+      <!-- Stats list -->
+      <div class="asr-stats">
+        <div class="asr-row">
+          <span class="asr-row-icon">🎰</span>
+          <span class="asr-row-label">Spins</span>
+          <span class="asr-row-val">{{ autoSummary.count }}</span>
+        </div>
+        <div class="asr-row">
+          <span class="asr-row-icon">💰</span>
+          <span class="asr-row-label">Total Bet</span>
+          <span class="asr-row-val">{{ autoSummary.totalBet.toLocaleString() }}</span>
+        </div>
+        <div class="asr-row">
+          <span class="asr-row-icon">🏆</span>
+          <span class="asr-row-label">Wins</span>
+          <span class="asr-row-val">{{ autoSummary.wins }} / {{ autoSummary.count }}</span>
+        </div>
+        <div class="asr-row">
+          <span class="asr-row-icon">⚡</span>
+          <span class="asr-row-label">Biggest Win</span>
+          <span class="asr-row-val asr-row-val--gold">{{ autoSummary.biggestWin.toLocaleString() }}</span>
+        </div>
+        <div class="asr-row">
+          <span class="asr-row-icon">✨</span>
+          <span class="asr-row-label">XP Earned</span>
+          <span class="asr-row-val asr-row-val--xp">+{{ autoSummary.xpEarned }}</span>
+        </div>
+      </div>
+
+      <BaseButton block variant="primary" class="asr-claim-btn" @click="showAutoSummary = false">
+        <svg class="asr-claim-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        Claim
+      </BaseButton>
     </BaseModal>
 
     <!-- Error -->
@@ -64,6 +122,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import { useGameStore } from "../stores/game.js";
 import { useWalletStore } from "../stores/wallet.js";
 import { useProfileStore } from "../stores/profile.js";
@@ -77,6 +136,7 @@ const props = defineProps({ game: { type: Object, required: true } });
 const gameStore = useGameStore();
 const walletStore = useWalletStore();
 const profileStore = useProfileStore();
+const router = useRouter();
 
 const canvasRef = ref(null);
 let slotApp = null;
@@ -93,18 +153,7 @@ let isAutoSpinning = false;
 const displayBalance = computed(() => gameStore.balance || walletStore.chipsBalance);
 const insufficientBalance = computed(() => displayBalance.value < (gameStore.selectedBet || 0) * gameStore.selectedSpins);
 
-const summaryStats = computed(() => {
-  const s = autoSummary.value;
-  return [
-    { label: "Spins", value: s.count },
-    { label: "Total Bet", value: s.totalBet.toLocaleString() },
-    { label: "Total Won", value: s.totalWon.toLocaleString(), cls: "auto-stat-val--gold" },
-    { label: "Net Result", value: (s.net >= 0 ? "+" : "") + s.net.toLocaleString(), cls: s.net >= 0 ? "auto-stat-val--gold" : "auto-stat-val--red" },
-    { label: "Wins", value: `${s.wins} / ${s.count}` },
-    { label: "Biggest Win", value: s.biggestWin.toLocaleString(), cls: "auto-stat-val--gold" },
-    { label: "XP Earned", value: "+" + s.xpEarned },
-  ];
-});
+// summaryStats removed — template uses autoSummary directly
 
 // ── Mount PixiJS ──
 
@@ -123,7 +172,7 @@ onMounted(async () => {
       gameStore.setSpins(count);
       slotApp.setAutoCount(count);
     };
-    slotApp.onBack = () => gameStore.leaveGame();
+    slotApp.onBack = () => router.replace({ name: "game" });
     slotApp.onAutoStop = () => { autoStopRequested = true; };
   } catch (e) {
     console.error("[SlotMachine] Failed to initialize:", e);
@@ -345,38 +394,161 @@ function delay(ms) {
   margin-top: 0.15rem;
 }
 
-/* ── Auto-spin summary ── */
-.auto-summary-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-  margin-bottom: 1.25rem;
+/* ── Auto-spin summary (premium redesign) ── */
+.asr-header-text {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
 }
 
-.auto-stat {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
-  padding: 0.6rem;
-  text-align: center;
+/* Hero section */
+.asr-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 0 0.75rem;
+  position: relative;
+  overflow: hidden;
 }
 
-.auto-stat-label {
-  display: block;
-  font-size: 0.65rem;
-  color: var(--color-text-muted);
+.asr-hero-glow {
+  position: absolute;
+  top: -20px;
+  width: 200px;
+  height: 120px;
+  background: radial-gradient(ellipse, rgba(212, 160, 32, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.asr-trophy {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+  animation: trophyPulse 2s ease-in-out infinite;
+}
+
+@keyframes trophyPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.5)); }
+}
+
+.asr-hero-label {
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
   margin-bottom: 0.2rem;
 }
 
-.auto-stat-val {
+.asr-hero-amount {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 2.2rem;
+  color: var(--color-gold);
+  text-shadow: 0 0 24px rgba(212, 160, 32, 0.25);
+  line-height: 1.1;
+  animation: amountFadeIn 0.6s ease;
+}
+
+.asr-hero-amount--zero {
+  color: var(--color-text-muted);
+  text-shadow: none;
+}
+
+.asr-hero-chip {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+  margin-left: 0.25rem;
+}
+
+@keyframes amountFadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Net result badge */
+.asr-net {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.5rem auto 0.75rem;
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.asr-net-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.asr-net--profit {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.asr-net--loss {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Stats rows */
+.asr-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.asr-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.asr-row-icon {
+  font-size: 1.05rem;
+  width: 1.4rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.asr-row-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.asr-row-val {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
   color: var(--color-text);
 }
 
-.auto-stat-val--gold { color: var(--color-gold); }
-.auto-stat-val--red { color: var(--color-error); }
+.asr-row-val--gold { color: var(--color-gold); }
+.asr-row-val--xp { color: #a78bfa; }
+
+/* Claim button */
+.asr-claim-btn {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.asr-claim-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 0.3rem;
+}
 
 /* ── Paytable (temporary, redesign later) ── */
 .pt-toggle {

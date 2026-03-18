@@ -41,6 +41,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: "", name: "game", component: GameView },
+      { path: "game/:gameId", name: "game-play", component: GameView },
       { path: "wallet", name: "wallet", component: WalletView },
       { path: "profile", name: "profile", component: ProfileView },
       { path: "achievements", name: "achievements", component: AchievementsView },

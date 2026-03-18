@@ -183,65 +183,6 @@ const SYMBOL_SVGS = {
      <circle cx="92" cy="22" r="3.5" fill="#FCD34D"/>
      <path d="M17 76 L12 84 L24 80Z" fill="#4D7C0F"/>`,
   ),
-
-  // ── Rattlesnake Gold ──
-  desert_star: s(
-    `<defs><linearGradient id="ds" x1="0" y1="0" x2="1" y2="1">
-       <stop offset="0%" stop-color="#FDBA74"/><stop offset="100%" stop-color="#EA580C"/>
-     </linearGradient></defs>
-     <path d="M60 4 L68 38 L108 28 L82 56 L112 76 L74 72 L60 116 L46 72 L8 76 L38 56 L12 28 L52 38Z" fill="url(#ds)" stroke="#FED7AA" stroke-width="2"/>`,
-  ),
-  dice: s(
-    `<rect x="8" y="32" width="46" height="46" rx="7" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2" transform="rotate(-8 31 55)"/>
-     <circle cx="20" cy="44" r="4" fill="#1E293B"/>
-     <circle cx="31" cy="55" r="4" fill="#1E293B"/>
-     <circle cx="42" cy="66" r="4" fill="#1E293B"/>
-     <rect x="56" y="38" width="46" height="46" rx="7" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2" transform="rotate(6 79 61)"/>
-     <circle cx="68" cy="50" r="4" fill="#EF4444"/>
-     <circle cx="90" cy="50" r="4" fill="#EF4444"/>
-     <circle cx="68" cy="72" r="4" fill="#EF4444"/>
-     <circle cx="90" cy="72" r="4" fill="#EF4444"/>`,
-  ),
-  golden_snake: s(
-    `<defs><linearGradient id="gn" x1="0" y1="0" x2="1" y2="1">
-       <stop offset="0%" stop-color="#FDE047"/><stop offset="100%" stop-color="#B45309"/>
-     </linearGradient></defs>
-     <path d="M22 82 C28 68 42 56 54 50 C64 44 74 50 80 58 C86 66 90 58 94 46 C98 34 96 26 90 20" fill="none" stroke="url(#gn)" stroke-width="14" stroke-linecap="round"/>
-     <path d="M22 82 C28 68 42 56 54 50 C64 44 74 50 80 58 C86 66 90 58 94 46 C98 34 96 26 90 20" fill="none" stroke="#FDE047" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
-     <circle cx="88" cy="18" r="4" fill="#EF4444"/>
-     <path d="M17 80 L10 88 L24 84Z" fill="#CA8A04"/>`,
-  ),
-  gold_nugget: s(
-    `<defs><linearGradient id="nu" x1="0" y1="0" x2="1" y2="1">
-       <stop offset="0%" stop-color="#FDE047"/><stop offset="50%" stop-color="#EAB308"/>
-       <stop offset="100%" stop-color="#92400E"/>
-     </linearGradient></defs>
-     <path d="M38 22 L78 18 L98 38 L104 72 L82 98 L44 102 L18 82 L12 48Z" fill="url(#nu)" stroke="#FDE047" stroke-width="2.5"/>
-     <path d="M38 22 L78 18 L62 48 L28 42Z" fill="#FEF9C3" opacity="0.3"/>
-     <path d="M78 18 L98 38 L75 52 L62 48Z" fill="#FEF9C3" opacity="0.15"/>`,
-  ),
-  horseshoe: s(
-    `<path d="M28 90 C28 48 36 20 60 20 C84 20 92 48 92 90" fill="none" stroke="#78716C" stroke-width="14" stroke-linecap="round"/>
-     <path d="M28 90 C28 48 36 20 60 20 C84 20 92 48 92 90" fill="none" stroke="#A8A29E" stroke-width="8" stroke-linecap="round"/>
-     <circle cx="28" cy="90" r="7" fill="#D6D3D1" stroke="#A8A29E" stroke-width="1.5"/>
-     <circle cx="92" cy="90" r="7" fill="#D6D3D1" stroke="#A8A29E" stroke-width="1.5"/>`,
-  ),
-  lantern: s(
-    `<rect x="38" y="6" width="44" height="10" rx="4" fill="#5C3310" stroke="#78350F" stroke-width="2"/>
-     <path d="M40 16 L36 42 L32 92 C32 100 44 108 60 108 C76 108 88 100 88 92 L84 42 L80 16Z" fill="#3B1A06" stroke="#5C3310" stroke-width="2.5"/>
-     <path d="M42 32 L38 72 C40 88 56 94 62 90 C56 86 44 78 46 64 L50 32Z" fill="#F97316" opacity="0.55"/>
-     <path d="M56 40 L54 64 C55 72 58 76 60 74 C58 70 56 66 57 58 L58 40Z" fill="#FCD34D" opacity="0.5"/>
-     <line x1="60" y1="0" x2="60" y2="6" stroke="#5C3310" stroke-width="3.5"/>
-     <ellipse cx="60" cy="0" rx="6" ry="3" fill="#5C3310"/>`,
-  ),
-  cowboy_boots: s(
-    `<path d="M32 16 L32 72 L18 88 L18 104 L56 104 L56 86 L44 76 L44 16Z" fill="#6D3A12" stroke="#92400E" stroke-width="2.5"/>
-     <path d="M66 16 L66 72 L80 88 L80 104 L102 104 L102 86 L92 76 L76 76 L76 16Z" fill="#6D3A12" stroke="#92400E" stroke-width="2.5"/>
-     <line x1="32" y1="28" x2="44" y2="28" stroke="#A16207" stroke-width="2.5"/>
-     <line x1="32" y1="36" x2="44" y2="36" stroke="#A16207" stroke-width="2.5"/>
-     <line x1="66" y1="28" x2="76" y2="28" stroke="#A16207" stroke-width="2.5"/>
-     <line x1="66" y1="36" x2="76" y2="36" stroke="#A16207" stroke-width="2.5"/>`,
-  ),
 };
 
 // ═══════════════════════════════════════════
@@ -288,18 +229,6 @@ export const GAME_SYMBOL_MAP = {
     heart: "heart",
     diamond_card: "diamond_card",
     club: "club",
-  },
-  "rattlesnake-gold": {
-    wild: "desert_star",
-    scatter: "dice",
-    snake_gold: "golden_snake",
-    nugget: "gold_nugget",
-    horseshoe: "horseshoe",
-    lantern: "lantern",
-    boots: "cowboy_boots",
-    spade: "spade",
-    heart: "heart",
-    diamond_card: "diamond_card",
   },
 };
 

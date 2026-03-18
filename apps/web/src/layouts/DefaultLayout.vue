@@ -223,7 +223,7 @@ const userInitials = computed(() => {
   return name.slice(0, 2).toUpperCase();
 });
 
-const isExactApp = computed(() => route.path === "/app");
+const isExactApp = computed(() => route.path === "/app" || route.path.startsWith("/app/game"));
 
 watch(() => route.path, () => {
   mobileOpen.value = false;

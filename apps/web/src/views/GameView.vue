@@ -1,6 +1,6 @@
 <!--
   Main game page - shows game lobby or active slot machine.
-  Fetches available games on mount, delegates to GameSelector or SlotMachine.
+  Reads :gameId from the route to persist game selection across refreshes.
 -->
 <template>
   <div class="game-view">
@@ -18,24 +18,55 @@
     <GameSelector
       v-else
       :games="gameStore.games"
-      @select="gameStore.selectGame($event)"
+      @select="handleSelect"
     />
   </div>
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useGameStore } from "../stores/game.js";
 import GameSelector from "../components/GameSelector.vue";
 import SlotMachine from "../components/SlotMachine.vue";
 
+const route = useRoute();
+const router = useRouter();
 const gameStore = useGameStore();
 
-onMounted(() => {
+// When user selects a game from the lobby, navigate to the game URL
+function handleSelect(game) {
+  gameStore.selectGame(game);
+  router.replace({ name: "game-play", params: { gameId: game.id } });
+}
+
+// On mount, if URL has a gameId, auto-select that game
+onMounted(async () => {
   if (gameStore.games.length === 0) {
-    gameStore.fetchGames();
+    await gameStore.fetchGames();
+  }
+
+  const gameId = route.params.gameId;
+  if (gameId && !gameStore.currentGame) {
+    const game = gameStore.games.find((g) => g.id === gameId);
+    if (game) {
+      gameStore.selectGame(game);
+    } else {
+      // Invalid game ID, go to lobby
+      router.replace({ name: "game" });
+    }
   }
 });
+
+// Watch for route changes (e.g., logo click navigating to /app)
+watch(
+  () => route.params.gameId,
+  (newGameId) => {
+    if (!newGameId && gameStore.currentGame) {
+      gameStore.leaveGame();
+    }
+  }
+);
 </script>
 
 <style scoped>

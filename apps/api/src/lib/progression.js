@@ -184,14 +184,16 @@ export const ACHIEVEMENTS = {
     xpReward: 200,
     chipsReward: 500,
   },
-  rattlesnake_gold_50: {
-    name: "Snake Charmer",
-    description: "Play Rattlesnake Gold 50 times",
-    category: "game",
-    threshold: 50,
-    stat: "game:rattlesnake-gold",
-    xpReward: 200,
-    chipsReward: 500,
+
+  // --- KYC ---
+  kyc_verified: {
+    name: "Verified Outlaw",
+    description: "Complete identity verification (KYC)",
+    category: "general",
+    threshold: 1,
+    stat: "kycVerified",
+    xpReward: 100,
+    chipsReward: 250,
   },
 };
 
@@ -211,6 +213,7 @@ export function getStatValue(achievement, user, gameStatsMap) {
     case "totalWon":     return Number(user.totalWon);
     case "biggestWin":   return Number(user.biggestWin);
     case "level":        return user.level;
+    case "kycVerified":  return user.kycStatus === "VERIFIED" ? 1 : 0;
     default:             return 0;
   }
 }

@@ -46,13 +46,6 @@ const THEMES = {
     reelBg: 0x06080e,
     reelDivider: 0x10141e,
   },
-  "rattlesnake-gold": {
-    frameBorder: 0x92400e,
-    frameInner: 0x100804,
-    accent: 0xf97316,
-    reelBg: 0x0e0804,
-    reelDivider: 0x1c1008,
-  },
 };
 
 function getTheme(gameId) {

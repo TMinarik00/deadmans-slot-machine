@@ -360,6 +360,7 @@ profileRouter.get("/achievements", requireAuth, async (req, res) => {
         totalWon: true,
         biggestWin: true,
         level: true,
+        kycStatus: true,
       },
     }),
     prisma.userGameStats.findMany({ where: { userId } }),
@@ -427,6 +428,7 @@ profileRouter.post("/achievements/:id/claim", requireAuth, async (req, res) => {
           totalWagered: true,
           totalWon: true,
           biggestWin: true,
+          kycStatus: true,
         },
       });
       if (!user) throw { status: 404, message: "User not found" };
