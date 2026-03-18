@@ -176,7 +176,7 @@
       </div>
     </Transition>
 
-    <main class="main-content">
+    <main class="main-content" :class="{ 'is-game': isGameRoute }">
       <RouterView v-slot="{ Component }">
         <Transition name="page" mode="out-in">
           <component :is="Component" />
@@ -223,7 +223,8 @@ const userInitials = computed(() => {
   return name.slice(0, 2).toUpperCase();
 });
 
-const isExactApp = computed(() => route.path === "/app");
+const isExactApp = computed(() => route.path === "/app" || route.path.startsWith("/app/game"));
+const isGameRoute = computed(() => route.path.startsWith("/app/game"));
 
 watch(() => route.path, () => {
   mobileOpen.value = false;
@@ -1432,6 +1433,9 @@ async function handleLogout() {
   .main-content {
     padding: 1.25rem 1rem;
   }
+  .main-content.is-game {
+    padding: 0.5rem 0 0;
+  }
 }
 
 @media (max-width: 380px) {
@@ -1470,6 +1474,9 @@ async function handleLogout() {
   }
   .main-content {
     padding: 1rem 0.75rem;
+  }
+  .main-content.is-game {
+    padding: 0.25rem 0 0;
   }
 }
 </style>

@@ -22,6 +22,8 @@ defineProps({
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .badge-default {

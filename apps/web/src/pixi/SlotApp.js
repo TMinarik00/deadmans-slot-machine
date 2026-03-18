@@ -46,13 +46,6 @@ const THEMES = {
     reelBg: 0x06080e,
     reelDivider: 0x10141e,
   },
-  "rattlesnake-gold": {
-    frameBorder: 0x92400e,
-    frameInner: 0x100804,
-    accent: 0xf97316,
-    reelBg: 0x0e0804,
-    reelDivider: 0x1c1008,
-  },
 };
 
 function getTheme(gameId) {
@@ -151,11 +144,19 @@ export class SlotApp {
 
     const c = this.app.canvas;
     c.style.width = "100%";
-    c.style.maxWidth = W + "px";
     c.style.height = "auto";
     c.style.display = "block";
     c.style.margin = "0 auto";
-    c.style.borderRadius = "12px";
+
+    // On desktop, cap at 800px with rounded corners
+    // On mobile, fill full width for bigger gameplay
+    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+    if (!isMobile) {
+      c.style.maxWidth = W + "px";
+      c.style.borderRadius = "12px";
+    } else {
+      c.style.borderRadius = "0";
+    }
     containerEl.appendChild(c);
 
     // Build all display objects first (no async, always renders)
@@ -182,6 +183,7 @@ export class SlotApp {
 
   _calcLayout() {
     const { rows, reels } = this.game;
+    this.isMobile = window.matchMedia("(max-width: 600px)").matches;
     this.cellH = rows <= 4 ? 88 : rows === 5 ? 74 : 64;
     this.reelInnerW =
       FRAME_W - 2 * FRAME_BORDER - 2 * FRAME_PAD;
@@ -190,7 +192,9 @@ export class SlotApp {
     this.reelFrameH =
       rows * this.cellH + 2 * (FRAME_BORDER + FRAME_PAD);
     this.ctrlY = REEL_Y + this.reelFrameH + 14;
-    this.autoY = this.ctrlY + 105 + 6;
+    // Taller control area on mobile for bigger touch targets
+    const ctrlH = this.isMobile ? 130 : 105;
+    this.autoY = this.ctrlY + ctrlH + 6;
     this.canvasH = this.autoY + 38 + 10;
     this.symSize = Math.min(this.reelW, this.cellH) * 0.72;
   }
@@ -649,10 +653,12 @@ export class SlotApp {
     const t = this.theme;
     const stage = this.app.stage;
     const y = this.ctrlY;
+    const mob = this.isMobile;
+    const ctrlH = mob ? 130 : 105;
 
     // Controls background — subtle dark area, no bordered panel
     const bg = new Graphics();
-    bg.roundRect(FRAME_X, y, FRAME_W, 105, 10);
+    bg.roundRect(FRAME_X, y, FRAME_W, ctrlH, 10);
     bg.fill({ color: 0x000000, alpha: 0.2 });
     // Thin separator line above controls
     bg.rect(FRAME_X + 20, y, FRAME_W - 40, 1);
@@ -663,22 +669,27 @@ export class SlotApp {
     const leftX = FRAME_X + 16;
 
     // BET label
-    const betLabel = new Text({ text: "BET", style: uiStyle(9, 0x806040, "800") });
+    const betFontSize = mob ? 11 : 9;
+    const betLabel = new Text({ text: "BET", style: uiStyle(betFontSize, 0x806040, "800") });
     betLabel.x = leftX;
     betLabel.y = y + 8;
     stage.addChild(betLabel);
 
-    // Bet chips (circular casino style)
+    // Bet chips (circular casino style) — bigger on mobile
     this.betChips = [];
-    const chipSize = 30;
+    const chipSize = mob ? 38 : 30;
+    const chipGap = mob ? 8 : 6;
+    const chipFontSize = mob ? 12 : 10;
+    const chipCenterY = mob ? y + 38 : y + 32;
     this.game.betOptions.forEach((val, i) => {
       const chip = this._createCasinoChip(
-        leftX + i * (chipSize + 6) + chipSize / 2,
-        y + 32,
+        leftX + i * (chipSize + chipGap) + chipSize / 2,
+        chipCenterY,
         chipSize / 2,
         String(val),
         i === 0,
         t,
+        chipFontSize,
       );
       chip.container.on("pointerdown", () => {
         if (this._spinning) return;
@@ -691,24 +702,31 @@ export class SlotApp {
     });
 
     // AUTO label
-    const autoLabel = new Text({ text: "AUTO", style: uiStyle(9, 0x806040, "800") });
+    const autoLabelY = mob ? y + 66 : y + 55;
+    const autoLabel = new Text({ text: "AUTO", style: uiStyle(betFontSize, 0x806040, "800") });
     autoLabel.x = leftX;
-    autoLabel.y = y + 55;
+    autoLabel.y = autoLabelY;
     stage.addChild(autoLabel);
 
-    // Auto-spin chips (pill style)
+    // Auto-spin chips (pill style) — bigger on mobile
     const autoOpts = [1, 5, 10, 100];
+    const pillW = mob ? 56 : 44;
+    const pillH = mob ? 30 : 24;
+    const pillGap = mob ? 60 : 50;
+    const pillFontSize = mob ? 13 : 11;
+    const pillY = mob ? y + 85 : y + 70;
     this.autoChips = [];
     autoOpts.forEach((val, i) => {
       const label = val === 1 ? "1x" : val + "x";
       const chip = this._createPillChip(
-        leftX + i * 50,
-        y + 70,
-        44,
-        24,
+        leftX + i * pillGap,
+        pillY,
+        pillW,
+        pillH,
         label,
         val === 1,
         t,
+        pillFontSize,
       );
       chip.container.on("pointerdown", () => {
         if (this._spinning) return;
@@ -725,29 +743,31 @@ export class SlotApp {
 
     // ── Right section: BALANCE ──
     const rightX = W - FRAME_X - 16;
+    const balLabelY = mob ? y + 30 : y + 22;
+    const balValueY = mob ? y + 50 : y + 40;
 
     const balLabel = new Text({
       text: "BALANCE",
-      style: uiStyle(9, 0x806040, "800"),
+      style: uiStyle(mob ? 11 : 9, 0x806040, "800"),
     });
     balLabel.anchor.set(1, 0);
     balLabel.x = rightX;
-    balLabel.y = y + 22;
+    balLabel.y = balLabelY;
     stage.addChild(balLabel);
 
     this.balanceText = new Text({
       text: "0",
-      style: headerStyle(22, t.accent),
+      style: headerStyle(mob ? 26 : 22, t.accent),
     });
     this.balanceText.anchor.set(1, 0);
     this.balanceText.x = rightX;
-    this.balanceText.y = y + 40;
+    this.balanceText.y = balValueY;
     stage.addChild(this.balanceText);
   }
 
   _buildSpinButton(ctrlY, t, stage) {
     const spinX = W / 2;
-    const spinY = ctrlY + 52;
+    const spinY = ctrlY + (this.isMobile ? 65 : 52);
     const spinR = 42;
 
     // All spin button visuals in a container positioned at center
@@ -850,7 +870,7 @@ export class SlotApp {
   // All drawing is local (0,0 = center). Container positioned at (cx, cy)
   // so pivot is naturally at center → scale works correctly.
 
-  _createCasinoChip(cx, cy, r, label, active, theme) {
+  _createCasinoChip(cx, cy, r, label, active, theme, fontSize = 10) {
     const ct = new Container();
     ct.x = cx;
     ct.y = cy;
@@ -860,7 +880,7 @@ export class SlotApp {
 
     const txt = new Text({
       text: label,
-      style: uiStyle(10, active ? 0x1a0f0a : 0x806040, "800"),
+      style: uiStyle(fontSize, active ? 0x1a0f0a : 0x806040, "800"),
     });
     txt.anchor.set(0.5, 0.5);
     ct.addChild(txt);
@@ -923,7 +943,7 @@ export class SlotApp {
   // ── Pill-style auto chip ──
   // Drawn from (-w/2, -h/2) so container center = chip center → correct scale pivot.
 
-  _createPillChip(x, y, w, h, label, active, theme) {
+  _createPillChip(x, y, w, h, label, active, theme, fontSize = 11) {
     const ct = new Container();
     ct.x = x + w / 2;
     ct.y = y + h / 2;
@@ -933,7 +953,7 @@ export class SlotApp {
 
     const txt = new Text({
       text: label,
-      style: uiStyle(11, active ? theme.accent : 0x806040, "700"),
+      style: uiStyle(fontSize, active ? theme.accent : 0x806040, "700"),
     });
     txt.anchor.set(0.5, 0.5);
     ct.addChild(txt);

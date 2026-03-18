@@ -24,6 +24,17 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // --- Profile info ---
+  firstName       String?                  // P2: optional first name
+  lastName        String?                  // P2: optional last name
+  phone           String?                  // P2: optional phone number
+
+  // --- Registration metadata ---
+  dateOfBirth     DateTime?                // P0: date of birth for 18+ verification
+  termsAcceptedAt DateTime?                // P0: timestamp of T&C acceptance
+  country         String?                  // P1: ISO 3166-1 alpha-2 code (e.g. "BA", "US")
+  kycStatus       String   @default("NONE") // KYC status: NONE, PENDING, VERIFIED, REJECTED
+
   // --- Progression ---
   xp             Int      @default(0)    // total experience points earned
   level          Int      @default(1)    // current level (starts at 1)

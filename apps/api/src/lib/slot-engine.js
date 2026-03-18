@@ -106,35 +106,6 @@ const GAMES = {
       bonusRound: { enabled: false },
     },
   },
-
-  "rattlesnake-gold": {
-    id: "rattlesnake-gold",
-    name: "Rattlesnake Gold",
-    description: "Follow the snake through the canyon. Its trail leads to hidden gold.",
-    theme: "canyon",
-    reels: 5,
-    rows: 4,
-    // ways = 4^5 = 1024
-    waysBase: 20,
-    betOptions: [5, 15, 30, 75, 150, 300],
-    symbols: [
-      { id: "wild", emoji: "💫", name: "Desert Star", type: WILD, payouts: { 3: 18, 4: 90, 5: 500 }, weight: 2 },
-      { id: "scatter", emoji: "🎲", name: "Lucky Dice", type: SCATTER, scatterPayouts: { 3: 8, 4: 30, 5: 120 }, weight: 2 },
-      { id: "snake_gold", emoji: "🐍", name: "Golden Snake", type: REGULAR, payouts: { 3: 12, 4: 70, 5: 350 }, weight: 3 },
-      { id: "nugget", emoji: "🪨", name: "Gold Nugget", type: REGULAR, payouts: { 3: 8, 4: 45, 5: 200 }, weight: 4 },
-      { id: "horseshoe", emoji: "🧲", name: "Horseshoe", type: REGULAR, payouts: { 3: 6, 4: 30, 5: 130 }, weight: 5 },
-      { id: "lantern", emoji: "🏮", name: "Mine Lantern", type: REGULAR, payouts: { 3: 4, 4: 18, 5: 80 }, weight: 6 },
-      { id: "boots", emoji: "🥾", name: "Cowboy Boots", type: REGULAR, payouts: { 3: 3, 4: 12, 5: 50 }, weight: 7 },
-      { id: "spade", emoji: "♠️", name: "Spade", type: REGULAR, payouts: { 3: 2, 4: 6, 5: 25 }, weight: 9 },
-      { id: "heart", emoji: "♥️", name: "Heart", type: REGULAR, payouts: { 3: 2, 4: 6, 5: 25 }, weight: 9 },
-      { id: "diamond_card", emoji: "♦️", name: "Diamond Card", type: REGULAR, payouts: { 3: 1, 4: 4, 5: 15 }, weight: 9 },
-    ],
-    features: {
-      freeSpins: { enabled: false, triggerSymbol: "scatter", minCount: 3, spins: { 3: 8, 4: 12, 5: 18 } },
-      gamble: { enabled: false, maxMultiplier: 8 },
-      bonusRound: { enabled: false },
-    },
-  },
 };
 
 // ========================================

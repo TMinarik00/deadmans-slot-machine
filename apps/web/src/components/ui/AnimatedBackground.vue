@@ -69,7 +69,7 @@ import {
   IconHat,
 } from "../icons/index.js";
 
-const props = defineProps({
+defineProps({
   variant: {
     type: String,
     default: "auth",

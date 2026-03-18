@@ -9,8 +9,18 @@
       {{ step === 'form' ? 'Withdraw CHIPS' : step === 'processing' ? 'Processing...' : 'Withdrawal Complete' }}
     </template>
 
+    <!-- KYC gate -->
+    <template v-if="!isKycVerified">
+      <div class="kyc-gate">
+        <svg viewBox="0 0 48 48" fill="currentColor" class="kyc-gate-icon"><path fill-rule="evenodd" d="M24 4L4 14v10c0 11 8.5 21.3 20 24 11.5-2.7 20-13 20-24V14L24 4zm-4 32l-10-10 2.83-2.83L20 30.34l15.17-15.17L38 18 20 36z"/></svg>
+        <h3 class="kyc-gate-title">KYC Required</h3>
+        <p class="kyc-gate-desc">You need to verify your identity before making withdrawals. This is required by gaming regulations.</p>
+        <button class="kyc-gate-btn" @click="goToProfile">Go to Profile &rarr; Verify</button>
+      </div>
+    </template>
+
     <!-- Step 1: Amount + method + details -->
-    <template v-if="step === 'form'">
+    <template v-else-if="step === 'form'">
       <!-- Amount -->
       <div class="field">
         <label class="field-label">Amount (CHIPS)</label>
@@ -131,12 +141,23 @@
 
 <script setup>
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useWalletStore } from "../stores/wallet.js";
+import { useProfileStore } from "../stores/profile.js";
 import BaseModal from "./ui/BaseModal.vue";
 import BaseButton from "./ui/BaseButton.vue";
 
 const emit = defineEmits(["close", "withdrawn"]);
+const router = useRouter();
 const walletStore = useWalletStore();
+const profileStore = useProfileStore();
+
+const isKycVerified = computed(() => profileStore.kycStatus === "VERIFIED");
+
+function goToProfile() {
+  emit("close");
+  router.push("/app/profile");
+}
 
 const cryptos = [
   { code: "BTC", symbol: "\u20BF" }, { code: "ETH", symbol: "\u039E" }, { code: "SOL", symbol: "S" },
@@ -257,4 +278,23 @@ async function processWithdraw() {
   .crypto-grid { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
   .field-row { grid-template-columns: 1fr 1fr; }
 }
+
+/* KYC gate */
+.kyc-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  gap: 0.75rem;
+}
+.kyc-gate-icon { width: 56px; height: 56px; color: var(--color-gold); opacity: 0.6; }
+.kyc-gate-title { font-family: var(--font-display); color: var(--color-gold); margin: 0; font-size: 1.2rem; }
+.kyc-gate-desc { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; line-height: 1.5; max-width: 280px; }
+.kyc-gate-btn {
+  width: 100%; padding: 0.7rem; border-radius: 10px; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; background: linear-gradient(135deg, #d4a020, #b8860b);
+  border: 1px solid var(--color-gold); color: #1a0f0a; transition: all 0.2s; margin-top: 0.5rem;
+}
+.kyc-gate-btn:hover { box-shadow: 0 2px 12px rgba(212, 160, 32, 0.3); transform: translateY(-1px); }
 </style>
