@@ -465,7 +465,14 @@ onUnmounted(() => {
 // ── Spin logic ──
 
 function handleSpinClick() {
-  if (gameStore.spinning || isAutoSpinning.value || insufficientBalance.value) return;
+  if (gameStore.spinning || isAutoSpinning.value) return;
+
+  if (insufficientBalance.value) {
+    const needed = (gameStore.selectedBet || 0) * gameStore.selectedSpins;
+    gameStore.error = `Insufficient balance. You need ${needed.toLocaleString()} CHIPS but have ${displayBalance.value.toLocaleString()}. Visit Wallet to deposit.`;
+    setTimeout(() => { if (gameStore.error?.startsWith("Insufficient")) gameStore.error = null; }, 4000);
+    return;
+  }
 
   if (gameStore.selectedSpins > 1) {
     runAutoSpin();
