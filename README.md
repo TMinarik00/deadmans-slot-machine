@@ -250,8 +250,6 @@ The Prisma schema currently defines:
 
 - `/login`
 - `/register`
-- `/forgot-password`
-- `/reset-password`
 
 ### Authenticated app routes
 
