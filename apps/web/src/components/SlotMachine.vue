@@ -1,18 +1,86 @@
 <!--
   PixiJS-powered slot machine.
-  All reel visuals, controls, and win effects rendered in WebGL canvas.
-  Vue handles business logic (API calls, auto-spin, modals, toasts).
+  Reel visuals and win effects render in WebGL canvas.
+  Vue handles business logic, modals, and mobile controls.
 -->
 <template>
-  <div class="slot-machine">
+  <div class="slot-machine" :style="themeVars">
+    <div v-if="isMobileLayout" class="mobile-slot-topbar">
+      <button class="mobile-slot-back" type="button" @click="goBack">
+        <svg class="mobile-slot-back-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M11.5 5.5L7 10l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="mobile-slot-back-text">LOBBY</span>
+      </button>
+
+      <div class="mobile-slot-title-wrap">
+        <span class="mobile-slot-title-line"></span>
+        <h2 class="mobile-slot-title">{{ game.name }}</h2>
+        <span class="mobile-slot-title-line"></span>
+      </div>
+
+      <div class="mobile-slot-ways">{{ waysLabel }}</div>
+    </div>
+
     <!-- PixiJS canvas + overlays -->
-    <div ref="canvasRef" class="canvas-wrap">
+    <div ref="canvasRef" class="canvas-wrap" :class="{ 'canvas-wrap--mobile': isMobileLayout }">
       <!-- XP / Level-up toast (overlays bottom of canvas) -->
       <div v-if="showXpToast" class="xp-toast" :class="{ 'xp-toast--levelup': gameStore.levelUp }">
         <span class="xp-toast-text">+{{ gameStore.xpEarned }} XP</span>
         <span v-if="gameStore.levelUp" class="xp-toast-level">
           Level {{ gameStore.levelUp.newLevel }}! +{{ gameStore.levelUp.reward }} CHIPS
         </span>
+      </div>
+    </div>
+
+    <div v-if="isMobileLayout" class="mobile-slot-controls">
+      <button
+        class="mobile-spin-button"
+        type="button"
+        :disabled="mobileSpinDisabled"
+        @click="handleSpinClick"
+      >
+        <span class="mobile-spin-button__label">SPIN</span>
+        <span v-if="selectedSpinCount > 1" class="mobile-spin-button__count">{{ selectedSpinCount }}x</span>
+      </button>
+
+      <section class="mobile-control-block" aria-label="Bet controls">
+        <div class="mobile-control-label">BET</div>
+        <div class="mobile-chip-row">
+          <button
+            v-for="bet in game.betOptions"
+            :key="bet"
+            class="mobile-chip mobile-chip--coin"
+            :class="{ 'is-active': bet === selectedBetValue }"
+            type="button"
+            :disabled="gameStore.spinning || isAutoSpinning"
+            @click="selectBetOption(bet)"
+          >
+            {{ bet }}
+          </button>
+        </div>
+      </section>
+
+      <section class="mobile-control-block" aria-label="Spin count controls">
+        <div class="mobile-control-label">SPINS</div>
+        <div class="mobile-chip-row mobile-chip-row--pills">
+          <button
+            v-for="count in AUTO_SPIN_OPTIONS"
+            :key="count"
+            class="mobile-chip mobile-chip--pill"
+            :class="{ 'is-active': count === selectedSpinCount }"
+            type="button"
+            :disabled="gameStore.spinning || isAutoSpinning"
+            @click="selectSpinCount(count)"
+          >
+            {{ count }}x
+          </button>
+        </div>
+      </section>
+
+      <div class="mobile-credits-card">
+        <span class="mobile-credits-card__label">CREDITS</span>
+        <strong class="mobile-credits-card__value">{{ Math.floor(displayBalance).toLocaleString() }}</strong>
       </div>
     </div>
 
@@ -175,6 +243,28 @@ import BaseButton from "./ui/BaseButton.vue";
 import PaytableModal from "./PaytableModal.vue";
 
 const props = defineProps({ game: { type: Object, required: true } });
+const MOBILE_BREAKPOINT = "(max-width: 600px)";
+const AUTO_SPIN_OPTIONS = [1, 5, 10, 100];
+const GAME_THEMES = {
+  "dead-mans-gun": {
+    frameBorder: "#8b6914",
+    frameInner: "#110a06",
+    accent: "#d4a020",
+    surface: "#0d0805",
+  },
+  "dead-mans-treasure": {
+    frameBorder: "#8b6914",
+    frameInner: "#0e0a04",
+    accent: "#eab308",
+    surface: "#0c0804",
+  },
+  "coyote-moon": {
+    frameBorder: "#4a5568",
+    frameInner: "#080a10",
+    accent: "#93c5fd",
+    surface: "#06080e",
+  },
+};
 
 const gameStore = useGameStore();
 const walletStore = useWalletStore();
@@ -182,7 +272,10 @@ const profileStore = useProfileStore();
 const router = useRouter();
 
 const canvasRef = ref(null);
+const isMobileLayout = ref(false);
 let slotApp = null;
+let mediaQueryList = null;
+let handleMediaQueryChange = null;
 
 // ── UI state ──
 const showPaytable = ref(false);
@@ -195,7 +288,7 @@ const achievementData = ref(null);
 const autoSummary = ref({ count: 0, totalBet: 0, totalWon: 0, net: 0, wins: 0, biggestWin: 0, xpEarned: 0 });
 let xpTimer = null;
 let autoStopRequested = false;
-let isAutoSpinning = false;
+const isAutoSpinning = ref(false);
 let previousUnlockedIds = new Set(); // track previously unlocked achievements
 
 // Achievement check: compare unlocked list before/after spins
@@ -274,28 +367,81 @@ async function handlePostSpinNotifications(data) {
 
 const displayBalance = computed(() => gameStore.balance || walletStore.chipsBalance);
 const insufficientBalance = computed(() => displayBalance.value < (gameStore.selectedBet || 0) * gameStore.selectedSpins);
+const selectedBetValue = computed(() => gameStore.selectedBet || props.game.betOptions[0]);
+const selectedSpinCount = computed(() => gameStore.selectedSpins || 1);
+const waysLabel = computed(() => {
+  const ways = props.game.ways ?? Math.pow(props.game.rows, props.game.reels);
+  return `${ways.toLocaleString()} WAYS`;
+});
+const mobileSpinDisabled = computed(() => gameStore.spinning || isAutoSpinning.value || insufficientBalance.value);
+const themeVars = computed(() => {
+  const theme = GAME_THEMES[props.game.id] || GAME_THEMES["dead-mans-gun"];
+  return {
+    "--slot-accent": theme.accent,
+    "--slot-frame": theme.frameBorder,
+    "--slot-ink": theme.frameInner,
+    "--slot-surface": theme.surface,
+  };
+});
 
 // summaryStats removed — template uses autoSummary directly
 
 // ── Mount PixiJS ──
 
+function goBack() {
+  router.replace({ name: "game" });
+}
+
+function selectBetOption(bet) {
+  if (gameStore.spinning || isAutoSpinning.value || bet === selectedBetValue.value) return;
+  gameStore.setBet(bet);
+  slotApp?.setBet(bet, props.game.betOptions);
+}
+
+function selectSpinCount(count) {
+  if (gameStore.spinning || isAutoSpinning.value || count === selectedSpinCount.value) return;
+  gameStore.setSpins(count);
+  slotApp?.setAutoCount(count);
+}
+
+async function mountSlotApp(useExternalMobileUi = isMobileLayout.value) {
+  isMobileLayout.value = useExternalMobileUi;
+
+  if (!canvasRef.value) return;
+
+  if (slotApp) {
+    slotApp.destroy();
+    slotApp = null;
+  }
+
+  canvasRef.value.querySelector("canvas")?.remove();
+
+  slotApp = new SlotApp({ useExternalMobileUi });
+  await slotApp.init(canvasRef.value, props.game);
+  slotApp.setBalance(displayBalance.value);
+  slotApp.setBet(selectedBetValue.value, props.game.betOptions);
+  slotApp.setAutoCount(selectedSpinCount.value);
+
+  slotApp.onSpin = handleSpinClick;
+  slotApp.onBetChange = (bet) => gameStore.setBet(bet);
+  slotApp.onAutoChange = (count) => {
+    gameStore.setSpins(count);
+    slotApp?.setAutoCount(count);
+  };
+  slotApp.onBack = goBack;
+  slotApp.onAutoStop = () => { autoStopRequested = true; };
+}
+
 onMounted(async () => {
   try {
-    slotApp = new SlotApp();
-    await slotApp.init(canvasRef.value, props.game);
-
-    // Set initial state
-    slotApp.setBalance(displayBalance.value);
-
-    // Wire callbacks
-    slotApp.onSpin = handleSpinClick;
-    slotApp.onBetChange = (bet) => gameStore.setBet(bet);
-    slotApp.onAutoChange = (count) => {
-      gameStore.setSpins(count);
-      slotApp.setAutoCount(count);
+    mediaQueryList = window.matchMedia(MOBILE_BREAKPOINT);
+    handleMediaQueryChange = async (event) => {
+      if (event.matches === isMobileLayout.value || gameStore.spinning || isAutoSpinning.value) return;
+      await mountSlotApp(event.matches);
     };
-    slotApp.onBack = () => router.replace({ name: "game" });
-    slotApp.onAutoStop = () => { autoStopRequested = true; };
+    mediaQueryList.addEventListener("change", handleMediaQueryChange);
+
+    await mountSlotApp(mediaQueryList.matches);
 
     // Initialize achievement tracking baseline
     initAchievementTracking();
@@ -307,6 +453,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   clearTimeout(xpTimer);
+  if (mediaQueryList && handleMediaQueryChange) {
+    mediaQueryList.removeEventListener("change", handleMediaQueryChange);
+  }
   if (slotApp) {
     slotApp.destroy();
     slotApp = null;
@@ -316,7 +465,7 @@ onUnmounted(() => {
 // ── Spin logic ──
 
 function handleSpinClick() {
-  if (gameStore.spinning || isAutoSpinning || insufficientBalance.value) return;
+  if (gameStore.spinning || isAutoSpinning.value || insufficientBalance.value) return;
 
   if (gameStore.selectedSpins > 1) {
     runAutoSpin();
@@ -367,7 +516,7 @@ async function runAutoSpin() {
   const count = gameStore.selectedSpins;
   const bet = gameStore.selectedBet;
 
-  isAutoSpinning = true;
+  isAutoSpinning.value = true;
   autoStopRequested = false;
   showAutoSummary.value = false;
   slotApp.showAutoProgress(0, count);
@@ -414,7 +563,7 @@ async function runAutoSpin() {
 
   summary.net = summary.totalWon - summary.totalBet;
   autoSummary.value = summary;
-  isAutoSpinning = false;
+  isAutoSpinning.value = false;
   slotApp?.hideAutoProgress();
   slotApp?.setSpinButtonState(true);
 
@@ -438,6 +587,10 @@ function delay(ms) {
 
 <style scoped>
 .slot-machine {
+  --slot-accent: #d4a020;
+  --slot-frame: #8b6914;
+  --slot-ink: #110a06;
+  --slot-surface: #0d0805;
   max-width: 820px;
   margin: 0 auto;
   user-select: none;
@@ -450,6 +603,11 @@ function delay(ms) {
   margin: 0 auto;
 }
 
+.mobile-slot-topbar,
+.mobile-slot-controls {
+  display: none;
+}
+
 /* Mobile: fill full width, remove gaps */
 @media (max-width: 600px) {
   .slot-machine {
@@ -458,9 +616,224 @@ function delay(ms) {
     padding: 0;
   }
 
+  .mobile-slot-topbar {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0 0 0.7rem;
+  }
+
+  .mobile-slot-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--slot-frame) 72%, transparent);
+    background: rgba(0, 0, 0, 0.3);
+    color: #a08060;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+
+  .mobile-slot-back-icon {
+    width: 0.9rem;
+    height: 0.9rem;
+    color: var(--slot-accent);
+  }
+
+  .mobile-slot-title-wrap {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mobile-slot-title-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--slot-accent) 65%, transparent));
+  }
+
+  .mobile-slot-title {
+    margin: 0;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    line-height: 1.1;
+    color: var(--slot-accent);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-slot-ways {
+    flex-shrink: 0;
+    padding: 0.35rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--slot-accent) 35%, transparent);
+    background: color-mix(in srgb, var(--slot-accent) 10%, transparent);
+    color: var(--slot-accent);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
   .canvas-wrap {
     max-width: 100%;
     margin: 0;
+  }
+
+  .canvas-wrap--mobile {
+    margin: 0;
+  }
+
+  .mobile-slot-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.95rem;
+    margin-top: 0.85rem;
+  }
+
+  .mobile-spin-button {
+    width: 7.4rem;
+    height: 7.4rem;
+    border-radius: 50%;
+    border: 3px solid #ffd700;
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.18), transparent 25%),
+      radial-gradient(circle at center, var(--slot-accent) 0%, #d79a00 72%, #8b5c00 100%);
+    box-shadow:
+      0 0 0 4px rgba(212, 160, 32, 0.16),
+      0 18px 28px rgba(0, 0, 0, 0.32);
+    color: #1a0f0a;
+    font-family: var(--font-display);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    cursor: pointer;
+  }
+
+  .mobile-spin-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+    box-shadow: 0 0 0 4px rgba(212, 160, 32, 0.08);
+  }
+
+  .mobile-spin-button__label {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .mobile-spin-button__count {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .mobile-control-block {
+    width: 100%;
+  }
+
+  .mobile-control-label {
+    margin-bottom: 0.45rem;
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: #8e7455;
+  }
+
+  .mobile-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.55rem;
+  }
+
+  .mobile-chip {
+    border: 1px solid color-mix(in srgb, var(--slot-frame) 55%, transparent);
+    background: rgba(0, 0, 0, 0.26);
+    color: #a08060;
+    cursor: pointer;
+    transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+  }
+
+  .mobile-chip:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .mobile-chip.is-active {
+    border-color: var(--slot-accent);
+    background: color-mix(in srgb, var(--slot-accent) 14%, rgba(0, 0, 0, 0.36));
+    color: var(--slot-accent);
+    box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.15);
+  }
+
+  .mobile-chip--coin {
+    width: 3.35rem;
+    height: 3.35rem;
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .mobile-chip-row--pills {
+    gap: 0.5rem;
+  }
+
+  .mobile-chip--pill {
+    min-width: 3.85rem;
+    height: 2.2rem;
+    padding: 0 0.85rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .mobile-credits-card {
+    width: 100%;
+    padding: 0.8rem 0.95rem;
+    border-radius: 18px;
+    border: 1px solid color-mix(in srgb, var(--slot-frame) 48%, transparent);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.34));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .mobile-credits-card__label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: #8e7455;
+  }
+
+  .mobile-credits-card__value {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--slot-accent);
+  }
+
+  .pt-toggle {
+    margin-top: 0.6rem;
+    padding: 0.35rem 0.9rem;
   }
 }
 

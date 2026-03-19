@@ -1,6 +1,6 @@
 // PixiJS Slot Machine Engine
-// Full-canvas slot machine: reels, controls, balance, spin button, win effects.
-// Designed for 800px base width, scales responsively via CSS.
+// Renders reels, win effects, and desktop canvas controls.
+// Designed for an 800px base width, then scaled responsively via CSS.
 
 import {
   Application,
@@ -80,8 +80,11 @@ export class SlotApp {
   textures = null;
   game = null;
   theme = null;
+  useExternalMobileUi = false;
+  usingExternalMobileUi = false;
 
   // Layout values (computed per game)
+  reelY = REEL_Y;
   cellH = 0;
   reelW = 0;
   reelInnerW = 0;
@@ -125,6 +128,10 @@ export class SlotApp {
   onBack = null;
   onAutoStop = null;
 
+  constructor(options = {}) {
+    this.useExternalMobileUi = Boolean(options.useExternalMobileUi);
+  }
+
   // ── Initialization ──
 
   async init(containerEl, game) {
@@ -162,11 +169,15 @@ export class SlotApp {
     // Build all display objects first (no async, always renders)
     // Order matters for z-layering: later = on top
     this._buildCanvasBg();
-    this._buildHeader();
+    if (!this.usingExternalMobileUi) {
+      this._buildHeader();
+    }
     this._buildReelFrame();
     this._buildReels();
     this._buildWinBanner(); // on top of reels so win text is visible
-    this._buildControls();
+    if (!this.usingExternalMobileUi) {
+      this._buildControls();
+    }
     this._buildAutoProgress();
 
     // Load symbol textures (async, may fail gracefully)
@@ -184,6 +195,8 @@ export class SlotApp {
   _calcLayout() {
     const { rows, reels } = this.game;
     this.isMobile = window.matchMedia("(max-width: 600px)").matches;
+    this.usingExternalMobileUi = this.isMobile && this.useExternalMobileUi;
+    this.reelY = this.usingExternalMobileUi ? 18 : REEL_Y;
     this.cellH = rows <= 4 ? 88 : rows === 5 ? 74 : 64;
     this.reelInnerW =
       FRAME_W - 2 * FRAME_BORDER - 2 * FRAME_PAD;
@@ -191,11 +204,10 @@ export class SlotApp {
       (this.reelInnerW - (reels - 1) * REEL_GAP) / reels;
     this.reelFrameH =
       rows * this.cellH + 2 * (FRAME_BORDER + FRAME_PAD);
-    this.ctrlY = REEL_Y + this.reelFrameH + 14;
-    // Compact stepper controls on mobile, chip layout on desktop
-    const ctrlH = this.isMobile ? 140 : 105;
+    this.ctrlY = this.reelY + this.reelFrameH + (this.usingExternalMobileUi ? 10 : 14);
+    const ctrlH = this.usingExternalMobileUi ? 0 : this.isMobile ? 214 : 105;
     this.autoY = this.ctrlY + ctrlH + 6;
-    this.canvasH = this.autoY + 38 + 10;
+    this.canvasH = this.autoY + 38 + (this.usingExternalMobileUi ? 14 : 10);
     this.symSize = Math.min(this.reelW, this.cellH) * 0.72;
   }
 
@@ -204,7 +216,7 @@ export class SlotApp {
   _buildHeader() {
     const stage = this.app.stage;
     const t = this.theme;
-    const hdrCenterY = (REEL_Y - 6) / 2 + 6; // vertical center of header area
+    const hdrCenterY = (this.reelY - 6) / 2 + 6; // vertical center of header area
 
     // ── Back button (pill-shaped with icon) ──
     const backCt = new Container();
@@ -346,7 +358,7 @@ export class SlotApp {
   _buildWinBanner() {
     const banner = new Container();
     // Position at top of reel area, centered over the reels
-    banner.y = REEL_Y + FRAME_BORDER + 4;
+    banner.y = this.reelY + FRAME_BORDER + 4;
     banner.visible = false;
 
     const bannerW = FRAME_W - 2 * FRAME_BORDER - 20;
@@ -484,18 +496,18 @@ export class SlotApp {
     const frame = new Graphics();
 
     // Drop shadow behind the frame
-    frame.roundRect(FRAME_X + 2, REEL_Y + 3, FRAME_W, this.reelFrameH, 16);
+    frame.roundRect(FRAME_X + 2, this.reelY + 3, FRAME_W, this.reelFrameH, 16);
     frame.fill({ color: 0x000000, alpha: 0.35 });
 
     // Outer ornate border (double-ring effect)
-    frame.roundRect(FRAME_X - 2, REEL_Y - 2, FRAME_W + 4, this.reelFrameH + 4, 16);
+    frame.roundRect(FRAME_X - 2, this.reelY - 2, FRAME_W + 4, this.reelFrameH + 4, 16);
     frame.fill({ color: t.frameBorder, alpha: 0.3 });
-    frame.roundRect(FRAME_X, REEL_Y, FRAME_W, this.reelFrameH, 14);
+    frame.roundRect(FRAME_X, this.reelY, FRAME_W, this.reelFrameH, 14);
     frame.fill(t.frameBorder);
 
     // Inner dark area
     const ix = FRAME_X + FRAME_BORDER;
-    const iy = REEL_Y + FRAME_BORDER;
+    const iy = this.reelY + FRAME_BORDER;
     const iw = FRAME_W - 2 * FRAME_BORDER;
     const ih = this.reelFrameH - 2 * FRAME_BORDER;
     frame.roundRect(ix, iy, iw, ih, 11);
@@ -539,10 +551,10 @@ export class SlotApp {
     // Corner accents (small gold dots in frame corners)
     const cornerR = 3;
     const corners = [
-      [FRAME_X + 10, REEL_Y + 10],
-      [FRAME_X + FRAME_W - 10, REEL_Y + 10],
-      [FRAME_X + 10, REEL_Y + this.reelFrameH - 10],
-      [FRAME_X + FRAME_W - 10, REEL_Y + this.reelFrameH - 10],
+      [FRAME_X + 10, this.reelY + 10],
+      [FRAME_X + FRAME_W - 10, this.reelY + 10],
+      [FRAME_X + 10, this.reelY + this.reelFrameH - 10],
+      [FRAME_X + FRAME_W - 10, this.reelY + this.reelFrameH - 10],
     ];
     for (const [cx, cy] of corners) {
       frame.circle(cx, cy, cornerR);
@@ -559,7 +571,7 @@ export class SlotApp {
   _buildReels() {
     const { reels, rows } = this.game;
     const ix = FRAME_X + FRAME_BORDER + FRAME_PAD;
-    const iy = REEL_Y + FRAME_BORDER + FRAME_PAD;
+    const iy = this.reelY + FRAME_BORDER + FRAME_PAD;
 
     this.reelContainers = [];
     this.reelSymbols = [];
@@ -654,7 +666,7 @@ export class SlotApp {
     const stage = this.app.stage;
     const y = this.ctrlY;
     const mob = this.isMobile;
-    const ctrlH = mob ? 140 : 105;
+    const ctrlH = mob ? 214 : 105;
 
     // Controls background — subtle dark area, no bordered panel
     const bg = new Graphics();
@@ -666,78 +678,94 @@ export class SlotApp {
     stage.addChild(bg);
 
     if (mob) {
-      // ═══ MOBILE: Two-row casino layout ═══
-      // Row 1: Info strip  — BET value | BALANCE | AUTO value
-      // Row 2: Action row  — [◀ ▶] BET | [SPIN] | [◀ ▶] AUTO
-
-      const infoY = y + 4;     // Info strip top
-      const actionY = y + 40;  // Action row top
+      const infoY = y + 14;
+      const infoCardY = infoY + 30;
+      const actionPanelY = y + 96;
+      const actionCenterY = actionPanelY + 44;
       const centerX = W / 2;
-      const leftX = FRAME_X + 70;
-      const rightX = W - FRAME_X - 70;
+      const infoCardW = 214;
+      const infoCardH = 58;
+      const infoCardGap = 10;
+      const infoStartX = FRAME_X + 28 + infoCardW / 2;
+      const leftX = infoStartX;
+      const rightX = infoStartX + (infoCardW + infoCardGap) * 2;
 
-      // ── Info strip background ──
-      bg.roundRect(FRAME_X + 2, infoY, FRAME_W - 4, 34, 6);
-      bg.fill({ color: 0x000000, alpha: 0.15 });
+      const infoStrip = new Graphics();
+      infoStrip.roundRect(FRAME_X + 10, infoY, FRAME_W - 20, 66, 16);
+      infoStrip.fill({ color: 0x120905, alpha: 0.58 });
+      infoStrip.roundRect(FRAME_X + 10, infoY, FRAME_W - 20, 66, 16);
+      infoStrip.stroke({ color: t.frameBorder, alpha: 0.18, width: 1.2 });
+      stage.addChild(infoStrip);
 
-      // ── BET info (left) ──
+      const makeInfoCard = (cx, label, value, valueSize, labelSize = 11) => {
+        const ct = new Container();
+        ct.x = cx;
+        ct.y = infoCardY;
+
+        const cardBg = new Graphics();
+        cardBg.roundRect(-infoCardW / 2, -infoCardH / 2, infoCardW, infoCardH, 14);
+        cardBg.fill({ color: 0x000000, alpha: 0.22 });
+        cardBg.roundRect(-infoCardW / 2, -infoCardH / 2, infoCardW, infoCardH, 14);
+        cardBg.stroke({ color: t.frameBorder, alpha: 0.2, width: 1 });
+        cardBg.roundRect(-infoCardW / 2 + 12, -infoCardH / 2 + 11, infoCardW - 24, 1, 1);
+        cardBg.fill({ color: t.accent, alpha: 0.12 });
+        ct.addChild(cardBg);
+
+        const labelText = new Text({
+          text: label,
+          style: uiStyle(labelSize, 0x8e7455, "700"),
+        });
+        labelText.anchor.set(0.5, 0.5);
+        labelText.y = -11;
+        ct.addChild(labelText);
+
+        const valueText = new Text({
+          text: value,
+          style: uiStyle(valueSize, t.accent, "800"),
+        });
+        valueText.anchor.set(0.5, 0.5);
+        valueText.y = 13;
+        ct.addChild(valueText);
+
+        stage.addChild(ct);
+        return valueText;
+      };
+
       this._betIndex = 0;
       const betOpts = this.game.betOptions;
-
-      const betInfoLabel = new Text({ text: "BET", style: uiStyle(12, 0x806040, "700") });
-      betInfoLabel.anchor.set(0.5, 0.5);
-      betInfoLabel.x = leftX - 26;
-      betInfoLabel.y = infoY + 17;
-      stage.addChild(betInfoLabel);
-
-      this._betValueText = new Text({
-        text: String(betOpts[0]),
-        style: uiStyle(22, t.accent, "800"),
-      });
-      this._betValueText.anchor.set(0.5, 0.5);
-      this._betValueText.x = leftX + 14;
-      this._betValueText.y = infoY + 17;
-      stage.addChild(this._betValueText);
-
-      // ── BALANCE info (center) ──
-      const balInfoLabel = new Text({ text: "BALANCE", style: uiStyle(10, 0x806040, "700") });
-      balInfoLabel.anchor.set(0.5, 0.5);
-      balInfoLabel.x = centerX - 36;
-      balInfoLabel.y = infoY + 17;
-      stage.addChild(balInfoLabel);
-
-      this.balanceText = new Text({
-        text: "0",
-        style: uiStyle(22, t.accent, "800"),
-      });
-      this.balanceText.anchor.set(0.5, 0.5);
-      this.balanceText.x = centerX + 28;
-      this.balanceText.y = infoY + 17;
-      stage.addChild(this.balanceText);
-
-      // ── AUTO info (right) ──
       const autoOpts = [1, 5, 10, 100];
       this._autoIndex = 0;
+      this._betValueText = makeInfoCard(leftX, "BET", String(betOpts[0]), 28);
+      this.balanceText = makeInfoCard(centerX, "BALANCE", "0", 30, 10);
+      this._autoValueText = makeInfoCard(rightX, "AUTO", "1x", 28);
 
-      const autoInfoLabel = new Text({ text: "AUTO", style: uiStyle(12, 0x806040, "700") });
-      autoInfoLabel.anchor.set(0.5, 0.5);
-      autoInfoLabel.x = rightX - 20;
-      autoInfoLabel.y = infoY + 17;
-      stage.addChild(autoInfoLabel);
+      const drawStepperPanel = (cx, label) => {
+        const panel = new Graphics();
+        panel.roundRect(cx - 78, actionPanelY, 156, 90, 28);
+        panel.fill({ color: 0x0f0704, alpha: 0.55 });
+        panel.roundRect(cx - 78, actionPanelY, 156, 90, 28);
+        panel.stroke({ color: t.frameBorder, alpha: 0.18, width: 1.2 });
+        panel.roundRect(cx - 52, actionPanelY + 14, 104, 1, 1);
+        panel.fill({ color: t.accent, alpha: 0.12 });
+        stage.addChild(panel);
 
-      this._autoValueText = new Text({
-        text: "1x",
-        style: uiStyle(22, t.accent, "800"),
+        const labelText = new Text({
+          text: label,
+          style: uiStyle(13, t.accent, "700"),
+        });
+        labelText.anchor.set(0.5, 0.5);
+        labelText.x = cx;
+        labelText.y = actionPanelY + 68;
+        stage.addChild(labelText);
+      };
+
+      drawStepperPanel(leftX, "BET");
+      drawStepperPanel(rightX, "AUTO");
+
+      const betLeft = this._createArrowButton(leftX - 34, actionCenterY, "<", t, {
+        radius: 31,
+        fontSize: 24,
       });
-      this._autoValueText.anchor.set(0.5, 0.5);
-      this._autoValueText.x = rightX + 22;
-      this._autoValueText.y = infoY + 17;
-      stage.addChild(this._autoValueText);
-
-      // ── Action row: BET arrows (left) ──
-      const arrowY = actionY + 48; // vertically centered with spin
-
-      const betLeft = this._createArrowButton(leftX - 24, arrowY, "<", t);
       betLeft.on("pointerdown", () => {
         if (this._spinning) return;
         this._betIndex = (this._betIndex - 1 + betOpts.length) % betOpts.length;
@@ -747,7 +775,10 @@ export class SlotApp {
       });
       stage.addChild(betLeft);
 
-      const betRight = this._createArrowButton(leftX + 24, arrowY, ">", t);
+      const betRight = this._createArrowButton(leftX + 34, actionCenterY, ">", t, {
+        radius: 31,
+        fontSize: 24,
+      });
       betRight.on("pointerdown", () => {
         if (this._spinning) return;
         this._betIndex = (this._betIndex + 1) % betOpts.length;
@@ -757,11 +788,15 @@ export class SlotApp {
       });
       stage.addChild(betRight);
 
-      // ── Action row: SPIN button (center) ──
-      this._buildSpinButton(actionY, t, stage);
+      this._buildSpinButton(actionPanelY, t, stage, {
+        centerYOffset: 45,
+        radius: 60,
+      });
 
-      // ── Action row: AUTO arrows (right) ──
-      const autoLeft = this._createArrowButton(rightX - 24, arrowY, "<", t);
+      const autoLeft = this._createArrowButton(rightX - 34, actionCenterY, "<", t, {
+        radius: 31,
+        fontSize: 24,
+      });
       autoLeft.on("pointerdown", () => {
         if (this._spinning) return;
         this._autoIndex = (this._autoIndex - 1 + autoOpts.length) % autoOpts.length;
@@ -771,7 +806,10 @@ export class SlotApp {
       });
       stage.addChild(autoLeft);
 
-      const autoRight = this._createArrowButton(rightX + 24, arrowY, ">", t);
+      const autoRight = this._createArrowButton(rightX + 34, actionCenterY, ">", t, {
+        radius: 31,
+        fontSize: 24,
+      });
       autoRight.on("pointerdown", () => {
         if (this._spinning) return;
         this._autoIndex = (this._autoIndex + 1) % autoOpts.length;
@@ -886,39 +924,50 @@ export class SlotApp {
     }
   }
 
-  _createArrowButton(cx, cy, direction, theme) {
+  _createArrowButton(cx, cy, direction, theme, options = {}) {
+    const radius = options.radius ?? 28;
+    const fontSize = options.fontSize ?? 22;
     const ct = new Container();
     ct.x = cx;
     ct.y = cy;
     ct.eventMode = "static";
     ct.cursor = "pointer";
 
-    // Circle background
     const bg = new Graphics();
-    bg.circle(0, 0, 28);
-    bg.fill({ color: theme.frameBorder, alpha: 0.3 });
-    bg.stroke({ color: theme.frameBorder, alpha: 0.4, width: 1 });
+    bg.circle(0, 0, radius);
+    bg.fill({ color: theme.frameBorder, alpha: 0.34 });
+    bg.circle(0, 0, radius - 4);
+    bg.fill({ color: 0x0f0704, alpha: 0.88 });
+    bg.circle(0, 0, radius - 4);
+    bg.stroke({ color: theme.accent, alpha: 0.28, width: 1.1 });
     ct.addChild(bg);
 
-    // Arrow text
     const arrow = new Text({
       text: direction,
-      style: uiStyle(22, 0xc8a050, "700"),
+      style: uiStyle(fontSize, 0xc8a050, "700"),
     });
     arrow.anchor.set(0.5, 0.5);
     ct.addChild(arrow);
 
-    // Hover/press effect
-    ct.on("pointerover", () => { ct.alpha = 0.8; });
+    ct.on("pointerover", () => { ct.alpha = 0.84; });
     ct.on("pointerout", () => { ct.alpha = 1; });
+    ct.on("pointerdown", () => {
+      gsap.to(ct.scale, { x: 0.92, y: 0.92, duration: 0.08 });
+    });
+    ct.on("pointerup", () => {
+      gsap.to(ct.scale, { x: 1, y: 1, duration: 0.16, ease: "back.out(2)" });
+    });
+    ct.on("pointerupoutside", () => {
+      gsap.to(ct.scale, { x: 1, y: 1, duration: 0.16, ease: "back.out(2)" });
+    });
 
     return ct;
   }
 
-  _buildSpinButton(ctrlY, t, stage) {
+  _buildSpinButton(ctrlY, t, stage, options = {}) {
     const spinX = W / 2;
-    const spinY = ctrlY + (this.isMobile ? 65 : 52);
-    const spinR = 42;
+    const spinY = ctrlY + (options.centerYOffset ?? (this.isMobile ? 65 : 52));
+    const spinR = options.radius ?? 42;
 
     // All spin button visuals in a container positioned at center
     // so scaling pivots from the button's center.
@@ -963,7 +1012,7 @@ export class SlotApp {
     // Spin text
     this.spinBtnText = new Text({
       text: "SPIN",
-      style: headerStyle(20, 0x1a0f0a),
+      style: headerStyle(this.isMobile ? 24 : 20, 0x1a0f0a),
     });
     this.spinBtnText.anchor.set(0.5, 0.5);
     spinCt.addChild(this.spinBtnText);
@@ -1321,7 +1370,7 @@ export class SlotApp {
   // Get the screen-space center of a result symbol (relative to stage)
   _getSymbolCenter(reel, row) {
     const ix = FRAME_X + FRAME_BORDER + FRAME_PAD;
-    const iy = REEL_Y + FRAME_BORDER + FRAME_PAD;
+    const iy = this.reelY + FRAME_BORDER + FRAME_PAD;
     const rx = ix + reel * (this.reelW + REEL_GAP);
     // After spin, container.y = -(PAD_COUNT * cellH), so result row 0 is at y = 0 visually
     const sy = iy + row * this.cellH + this.cellH / 2;
@@ -1528,6 +1577,7 @@ export class SlotApp {
   // ── UI updates ──
 
   setBalance(amount) {
+    if (!this.balanceText) return;
     this.balanceText.text = Math.floor(amount).toLocaleString();
   }
 
@@ -1544,6 +1594,7 @@ export class SlotApp {
   }
 
   _updateSpinLabel() {
+    if (!this.spinBtnText) return;
     const count = this._currentAutoCount;
     if (count > 1) {
       this.spinBtnText.text = "SPIN";
@@ -1572,6 +1623,9 @@ export class SlotApp {
   }
 
   setSpinButtonState(enabled) {
+    if (!this.spinBtn || !this.spinBtnText || !this._spinBtnBg || !this._spinRing || !this.spinBtnGlow || !this._spinCt) {
+      return;
+    }
     this.spinBtn.eventMode = enabled ? "static" : "none";
     this.spinBtn.cursor = enabled ? "pointer" : "default";
     this._spinBtnBg.alpha = enabled ? 1 : 0.5;
