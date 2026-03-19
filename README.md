@@ -1,200 +1,294 @@
 # Dead Man's Slot Machine
 
-A full-stack Wild West slot machine simulation built with Vue 3, Express, PostgreSQL, and Docker. Features 4 themed games, multi-currency wallets, a progression system with achievements, and a leaderboard.
+Dead Man's Slot Machine is a full-stack Wild West casino-style simulator built as an npm workspace monorepo. It combines a Vue 3 frontend, an Express API, PostgreSQL via Prisma, and a PixiJS-powered slot experience with virtual wallets, progression, achievements, and leaderboard features.
 
-> **Simulation only** — no real money or gambling. All currencies and conversions are purely informational.
+> Simulation only. There is no real-money gambling, no real payments, and no real KYC processing in this project.
 
-## Tech Stack
+## What ships today
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Vue 3 + Vite + Vue Router + Pinia |
-| Backend | Node.js + Express 5 |
-| Database | PostgreSQL 17 + Prisma ORM |
-| Auth | JWT (access + refresh tokens), Argon2id password hashing |
-| Validation | Zod schemas on all endpoints |
-| API Docs | OpenAPI 3.1 + Swagger UI |
-| CI/CD | GitHub Actions (lint, build, Docker) |
-| Dev Tools | Docker Compose, Mailpit (email catcher), ESLint |
+- Email/password auth with refresh-token sessions and password reset flow
+- Three slot games rendered in PixiJS with a ways-to-win payout system
+- Virtual wallet system with CHIPS, fiat, and crypto balances
+- XP, levels, daily bonus, achievements, and leaderboard progression
+- Profile editing plus a simulated KYC status flow
+- Swagger API docs and Mailpit for local email testing
 
-## Quick Start (Docker)
+## Tech stack
 
-```bash
-# Start all services (PostgreSQL + API + Mailpit)
-docker compose up
+| Layer | Stack |
+| --- | --- |
+| Frontend | Vue 3, Vite, Vue Router, Pinia, GSAP, PixiJS |
+| Backend | Node.js, Express 5, Zod |
+| Database | PostgreSQL, Prisma ORM |
+| Auth | JWT access/refresh flow, Argon2 password hashing |
+| Docs | OpenAPI 3.1, Swagger UI |
+| Dev tooling | Docker Compose, Mailpit, ESLint, GitHub Actions |
 
-# API:          http://localhost:3000
-# Swagger docs: http://localhost:3000/docs
-# Mailpit UI:   http://localhost:8025
-```
-
-## Quick Start (Local Dev)
-
-```bash
-# 1. Start the database
-docker compose up db -d
-
-# 2. Install all dependencies (npm workspaces)
-npm install
-
-# 3. Set up the API environment
-cp apps/api/.env.example apps/api/.env
-
-# 4. Push the database schema
-npx prisma db push --schema=apps/api/prisma/schema.prisma
-
-# 5. Run both apps (separate terminals)
-npm run dev:api     # → http://localhost:3000
-npm run dev:web     # → http://localhost:5173
-```
-
-## Features
+## Core product features
 
 ### Authentication
-- Register & login with email/password
-- JWT access tokens (15 min) + refresh tokens (7 days)
-- Password reset via email (Mailpit catches emails in dev)
-- Rate limiting on auth endpoints (10 req / 15 min)
 
-### Wallet System
-- 10 supported currencies: CHIPS, USD, EUR, GBP, BTC, ETH, LTC, SOL, DOGE, ADA
-- Deposit, withdraw, and convert between currencies
-- Full transaction history with audit trail
+- Register with email, username, password, date of birth, country, and optional profile data
+- Login, logout, refresh session, and restore session via `GET /me`
+- Forgot-password and reset-password flow through Mailpit in local development
+- Rate limiting on login and forgot-password endpoints
 
-### Slot Machine (4 Games)
+### Slot gameplay
 
-| Game | Reels x Rows | Ways | Bet Range |
-|------|-------------|------|-----------|
-| Dead Man's Gun | 5 x 4 | 1,024 | 10–500 CHIPS |
-| Dead Man's Treasure | 5 x 5 | 3,125 | 10–500 CHIPS |
-| Coyote Moon | 5 x 6 | 7,776 | 10–600 CHIPS |
-| Rattlesnake Gold | 5 x 4 | 1,024 | 5–300 CHIPS |
+- Three games: Dead Man's Gun, Dead Man's Treasure, and Coyote Moon
+- Ways-to-win engine with adjacent left-to-right matching logic
+- Wild and scatter symbols
+- PixiJS reel rendering, win highlights, and premium slot UI
+- Auto-spin options: `1`, `5`, `10`, and `100`
 
-- **Ways-to-win** mechanic (adjacent reels, left to right)
-- Wild symbols (substitute for others) and scatter symbols (position-independent payouts)
-- Auto-spin: 1, 5, 10, or 100 spins with summary
+### Wallets and virtual economy
 
-### Progression System
-- XP earned per spin (1 XP per CHIP wagered)
-- Level-up rewards (CHIPS bonuses)
-- Daily bonus: 100 CHIPS + 25 XP (once per 24h)
+- Ten supported currencies: `CHIPS`, `USD`, `EUR`, `GBP`, `BTC`, `ETH`, `LTC`, `SOL`, `DOGE`, `ADA`
+- Welcome bonus of `1000 CHIPS` when a user first gets a CHIPS wallet
+- Deposit, withdraw, and convert between currencies using simulated rates
+- Immutable transaction ledger for deposits, withdrawals, conversions, bets, wins, bonuses, and rewards
 
-### Achievements
-- 20+ achievements across categories (wins, levels, wagering, exploration)
-- Progress tracking with claimable rewards (CHIPS + XP)
+### Progression and profile
 
-### Leaderboard
-- Top 20 players
-- 3 ranking modes: Total Won, Biggest Win, Level
+- XP gain based on wager amount: `1 XP` per wagered CHIP
+- Level rewards based on current level
+- Daily bonus: `100 CHIPS` and `25 XP`
+- `15` built-in achievements across spins, wins, wagering, levels, game-specific play, and KYC
+- Leaderboard modes for `totalWon`, `biggestWin`, and `level`
+- Leaderboard periods for `daily`, `weekly`, `monthly`, and `allTime`
+- Profile edit and delete flows
+- Simulated KYC submission with status updates (`NONE`, `PENDING`, `VERIFIED`, `REJECTED`)
 
-## API Documentation
+## Game catalog
 
-Interactive Swagger UI at `/docs` on the API server. Every endpoint is documented in `apps/api/openapi.yaml`.
+| Game | Reels x Rows | Ways | Bet options |
+| --- | --- | --- | --- |
+| Dead Man's Gun | 5 x 4 | 1,024 | 10, 20, 50, 100, 200, 500 CHIPS |
+| Dead Man's Treasure | 5 x 5 | 3,125 | 10, 25, 50, 100, 250, 500 CHIPS |
+| Coyote Moon | 5 x 6 | 7,776 | 10, 30, 60, 100, 300, 600 CHIPS |
 
-### Endpoints Overview
+## Repository structure
 
-| Group | Endpoints | Auth Required |
-|-------|-----------|---------------|
-| Health | `GET /health` | No |
-| Auth | `POST /auth/register`, `login`, `refresh`, `logout`, `forgot-password`, `reset-password`, `GET /me` | No (except /me) |
-| Wallet | `GET /wallet`, `/wallet/rates`, `/wallet/transactions`, `POST /wallet/deposit`, `withdraw`, `convert` | Yes |
-| Game | `GET /game/list`, `/game/:id`, `POST /game/spin` | Yes |
-| Profile | `GET /profile`, `/achievements`, `/leaderboard`, `POST /profile/daily-bonus`, `/achievements/:id/claim` | Yes |
-
-## Project Structure
-
-```
-├── .github/workflows/
-│   └── ci.yml                    # GitHub Actions CI pipeline
-├── apps/
-│   ├── api/                      # Express backend
-│   │   ├── prisma/schema.prisma  # Database schema (7 models)
-│   │   ├── openapi.yaml          # Full API specification
-│   │   ├── Dockerfile            # Multi-stage production build
-│   │   └── src/
-│   │       ├── server.js         # App entry point
-│   │       ├── routes/           # health, auth, wallet, game, profile
-│   │       ├── middleware/       # auth guard, validation, security headers
-│   │       └── lib/              # prisma, tokens, password, email, slot-engine, progression
-│   └── web/                      # Vue 3 frontend
-│       └── src/
-│           ├── views/            # 9 page components
-│           ├── components/       # SlotMachine, GameSelector, modals
-│           ├── components/ui/    # Reusable component library (9 components)
-│           ├── stores/           # Pinia stores (auth, game, wallet, profile)
-│           ├── layouts/          # AuthLayout, DefaultLayout
-│           ├── router/           # Vue Router with auth guards
-│           └── lib/api.js        # HTTP client with token refresh
-├── docker-compose.yml            # PostgreSQL + API + Mailpit
-└── package.json                  # npm workspaces root
+```text
+.
+|-- .github/workflows/ci.yml
+|-- apps/
+|   |-- api/
+|   |   |-- openapi.yaml
+|   |   |-- prisma/
+|   |   |   |-- migrations/
+|   |   |   `-- schema.prisma
+|   |   |-- src/
+|   |   |   |-- lib/
+|   |   |   |-- middleware/
+|   |   |   |-- routes/
+|   |   |   `-- server.js
+|   |   `-- package.json
+|   `-- web/
+|       |-- src/
+|       |   |-- assets/
+|       |   |-- components/
+|       |   |-- layouts/
+|       |   |-- router/
+|       |   |-- stores/
+|       |   `-- views/
+|       `-- package.json
+|-- docker-compose.yml
+|-- package.json
+`-- README.md
 ```
 
-## Database Schema
+## Local development
 
-| Model | Purpose |
-|-------|---------|
-| User | Account, credentials, XP/level, lifetime stats |
-| Wallet | Per-currency balance (Decimal 18,2) |
-| Transaction | Immutable audit log (deposit, withdrawal, bet, win, bonus, etc.) |
-| RefreshToken | Revocable session tokens (SHA-256 hashed, 7-day TTL) |
-| PasswordResetToken | One-time reset links (SHA-256 hashed, 1-hour TTL) |
-| UserAchievement | Per-user achievement progress and claim status |
-| UserGameStats | Per-user per-game spin/win statistics |
+### Requirements
 
-## Security
+- Node.js 24.x is the version used in CI
+- npm
+- Docker Desktop or another Docker runtime with Compose support
 
-- Passwords hashed with Argon2id (OWASP recommended)
-- Tokens stored as SHA-256 hashes (never plaintext)
-- Input validation with Zod on every endpoint
-- Rate limiting on authentication routes
-- CORS restricted to frontend origin
-- Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
-- SQL injection protection via Prisma ORM
-
-## CI/CD
-
-GitHub Actions runs on every push/PR to `main` and `staging`:
-
-| Job | What it does |
-|-----|-------------|
-| **Lint** | ESLint on `apps/api` and `apps/web` |
-| **Build** | Prisma client generation + Vite frontend build |
-| **Docker** | Builds the API container image |
-
-## Development Cycles
-
-### Completed
-
-- [x] **Cycle 0 — Foundation:** Monorepo, Docker Compose, health endpoint, Swagger UI, Vue scaffold
-- [x] **Cycle 1 — Authentication:** Register, login, JWT tokens, password reset with email
-- [x] **Cycle 2 — Wallet System:** Multi-currency wallets (10 currencies), deposit/withdraw, conversion rates, transaction history
-- [x] **Cycle 3 — Slot Engine:** 4 Wild West games, ways-to-win mechanic, reel animations, bet system
-- [x] **Cycle 4 — Profile & Progression:** XP/levels, 20+ achievements, leaderboard, daily bonus, per-game stats
-- [x] **Cycle 5 — UI Polish & CI/CD:** Reusable component library, page transitions, ESLint, GitHub Actions pipeline
-
-### Upcoming
-
-- [ ] **Cycle 6.1 — Visual Overhaul: Auth Pages:** Wild West themed login, register, forgot/reset password with dark western palette, typography, backgrounds
-- [ ] **Cycle 6.2 — Visual Overhaul: Wallet & Navigation:** Navbar redesign, wallet page, deposit/withdraw, transaction history, currency cards
-- [ ] **Cycle 6.3 — Visual Overhaul: Profile & Leaderboard:** Profile page, level/XP display, achievements, daily bonus, leaderboard — complete redesign
-- [ ] **Cycle 6.4 — Visual Overhaul: Slot Machine & Game UI:** Replace emoji symbols with proper SVG icons/images, reel redesign, win animations, game selector, game lobby
-- [ ] **Cycle 7 — Sound & Atmosphere:** Sound effects (spin, win, coins, buttons), background music, ambient audio, volume/mute controls
-- [ ] **Cycle 8 — Final Polish & README:** Final visual tweaks, deployment prep, comprehensive documentation
-
-## Mailpit (Email Testing)
-
-Mailpit catches all emails sent by the API (password resets). Open http://localhost:8025 to view them in a web UI. This is only used in local development.
-
-## Scripts
+### 1. Install dependencies
 
 ```bash
-npm run dev          # Start both API and frontend
-npm run dev:api      # Start API only
-npm run dev:web      # Start frontend only
-npm run lint         # Lint both apps
-npm run build:web    # Build frontend for production
+npm install
 ```
 
-## Author
+### 2. Create the API environment file
 
-**Tin Minarik** — tinminarik00@gmail.com
+Copy `apps/api/.env.example` to `apps/api/.env`.
+
+Examples:
+
+```bash
+# macOS / Linux
+cp apps/api/.env.example apps/api/.env
+```
+
+```powershell
+# PowerShell
+Copy-Item apps/api/.env.example apps/api/.env
+```
+
+### 3. Start local infrastructure
+
+```bash
+docker compose up -d db mailpit
+```
+
+### 4. Generate Prisma client and run migrations
+
+```bash
+npm run db:generate --workspace=apps/api
+npm run db:migrate --workspace=apps/api
+```
+
+### 5. Run the API and frontend in separate terminals
+
+```bash
+npm run dev --workspace=apps/api
+```
+
+```bash
+npm run dev --workspace=apps/web
+```
+
+### Local URLs
+
+| Service | URL |
+| --- | --- |
+| Frontend | http://localhost:5173 |
+| API | http://localhost:3000 |
+| Swagger UI | http://localhost:3000/docs |
+| Health | http://localhost:3000/health |
+| Mailpit | http://localhost:8025 |
+
+## Docker notes
+
+This repository's `docker-compose.yml` starts backend infrastructure and services:
+
+- `db` for PostgreSQL
+- `api` for the Express server
+- `mailpit` for local email capture
+
+The Vite frontend is not containerized in `docker-compose.yml`. For normal development, run the frontend locally on port `5173`.
+
+To run the backend services through Docker:
+
+```bash
+docker compose up -d db api mailpit
+```
+
+If you change backend code or Prisma setup and need a rebuilt API container:
+
+```bash
+docker compose up -d --build api
+```
+
+## Available scripts
+
+### Root workspace
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev:api` | Start the API workspace |
+| `npm run dev:web` | Start the frontend workspace |
+| `npm run dev` | Start both via the root script |
+| `npm run lint` | Lint API and web workspaces |
+| `npm run build:web` | Build the frontend |
+
+### API workspace
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev --workspace=apps/api` | Start API in watch mode |
+| `npm run start --workspace=apps/api` | Start API once |
+| `npm run db:generate --workspace=apps/api` | Generate Prisma client |
+| `npm run db:migrate --workspace=apps/api` | Apply Prisma migrations |
+| `npm run db:push --workspace=apps/api` | Push schema directly to the database |
+| `npm run db:studio --workspace=apps/api` | Open Prisma Studio |
+| `npm run lint --workspace=apps/api` | Lint backend code |
+
+### Web workspace
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev --workspace=apps/web` | Start Vite dev server |
+| `npm run build --workspace=apps/web` | Build production frontend assets |
+| `npm run preview --workspace=apps/web` | Preview the production build |
+| `npm run lint --workspace=apps/web` | Lint frontend code |
+
+## API overview
+
+Interactive API documentation is served from `apps/api/openapi.yaml` at `/docs`.
+
+### Route groups
+
+| Group | Endpoints |
+| --- | --- |
+| Health | `GET /health` |
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `GET /me` |
+| Wallet | `GET /wallet`, `GET /wallet/transactions`, `POST /wallet/deposit`, `POST /wallet/withdraw`, `POST /wallet/convert`, `GET /wallet/rates` |
+| Game | `GET /game/list`, `GET /game/:id`, `POST /game/spin` |
+| Profile | `GET /profile`, `POST /profile/kyc`, `POST /profile/edit`, `POST /profile/delete`, `POST /profile/daily-bonus`, `GET /achievements`, `POST /achievements/:id/claim`, `GET /leaderboard` |
+
+## Data model summary
+
+The Prisma schema currently defines:
+
+- `User`
+- `PasswordResetToken`
+- `RefreshToken`
+- `Wallet`
+- `Transaction`
+- `UserAchievement`
+- `UserGameStats`
+- `Currency` enum
+- `TransactionType` enum
+
+## Frontend route summary
+
+### Guest routes
+
+- `/login`
+- `/register`
+- `/forgot-password`
+- `/reset-password`
+
+### Authenticated app routes
+
+- `/app`
+- `/app/game/:gameId`
+- `/app/wallet`
+- `/app/profile`
+- `/app/achievements`
+- `/app/leaderboard`
+
+## CI
+
+GitHub Actions runs on pushes and pull requests targeting `main` and `staging`.
+
+Current pipeline steps:
+
+- Lint API workspace
+- Lint web workspace
+- Generate Prisma client
+- Build the frontend
+- Build the API Docker image
+
+## Environment variables
+
+`apps/api/.env.example` currently contains:
+
+- `DATABASE_URL`
+- `PORT`
+- `CORS_ORIGIN`
+- `FRONTEND_URL`
+- `JWT_SECRET`
+- `SMTP_HOST`
+- `SMTP_PORT`
+
+## Notes
+
+- Mailpit is used only for local development email capture.
+- Currency rates are simulated and defined in backend code.
+- KYC is simulated for product flow purposes; it is not connected to any real identity provider.
+- The slot engine and wallet system are designed for virtual balances only.
