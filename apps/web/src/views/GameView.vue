@@ -77,6 +77,8 @@ watch(
 @media (max-width: 600px) {
   .game-view {
     padding: 0;
+    height: 100%;
+    overflow: hidden;
   }
 }
 

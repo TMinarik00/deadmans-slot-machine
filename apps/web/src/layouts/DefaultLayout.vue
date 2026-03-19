@@ -4,7 +4,7 @@
 -->
 <template>
   <div class="default-layout">
-    <AnimatedBackground variant="default" />
+    <AnimatedBackground variant="default" :class="{ 'hide-on-mobile-game': isGameRoute }" />
 
     <nav class="navbar">
       <div class="nav-inner">
@@ -1434,7 +1434,13 @@ async function handleLogout() {
     padding: 1.25rem 1rem;
   }
   .main-content.is-game {
-    padding: 0.5rem 0 0;
+    padding: 0;
+    overflow: hidden;
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+  }
+  .hide-on-mobile-game {
+    display: none;
   }
 }
 
@@ -1476,7 +1482,8 @@ async function handleLogout() {
     padding: 1rem 0.75rem;
   }
   .main-content.is-game {
-    padding: 0.25rem 0 0;
+    padding: 0;
+    overflow: hidden;
   }
 }
 </style>

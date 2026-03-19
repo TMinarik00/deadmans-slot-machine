@@ -450,24 +450,29 @@ function delay(ms) {
   margin: 0 auto;
 }
 
-/* Mobile: fill full viewport, pin game to top */
+/* Mobile: fill full viewport, center game vertically */
 @media (max-width: 600px) {
   .slot-machine {
     max-width: 100%;
     margin: 0;
     padding: 0;
-    min-height: calc(100vh - 60px);
-    min-height: calc(100dvh - 60px);
+    min-height: calc(100vh - 56px);
+    min-height: calc(100dvh - 56px);
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
+    background: #0a0604;
+    overflow: hidden;
   }
 
   .canvas-wrap {
     max-width: 100%;
     width: 100%;
     margin: 0;
+    flex-shrink: 0;
   }
 }
 
