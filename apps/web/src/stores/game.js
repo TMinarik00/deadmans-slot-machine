@@ -67,6 +67,7 @@ export const useGameStore = defineStore("game", () => {
     wins.value = [];
     totalWin.value = 0;
     symbolMap.value = {};
+    spinning.value = false;
     lastFeature.value = null;
     xpEarned.value = 0;
     levelUp.value = null;
