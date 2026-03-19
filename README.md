@@ -11,7 +11,7 @@ Dead Man's Slot Machine is a full-stack Wild West casino-style simulator built a
 - Virtual wallet system with CHIPS, fiat, and crypto balances
 - XP, levels, daily bonus, achievements, and leaderboard progression
 - Profile editing plus a simulated KYC status flow
-- Swagger API docs and Mailpit for local email testing
+- Swagger API docs
 
 ## Tech stack
 
@@ -22,7 +22,7 @@ Dead Man's Slot Machine is a full-stack Wild West casino-style simulator built a
 | Database | PostgreSQL, Prisma ORM |
 | Auth | JWT access/refresh flow, Argon2 password hashing |
 | Docs | OpenAPI 3.1, Swagger UI |
-| Dev tooling | Docker Compose, Mailpit, ESLint, GitHub Actions |
+| Dev tooling | Docker Compose, ESLint, GitHub Actions |
 
 ## Core product features
 
@@ -30,8 +30,7 @@ Dead Man's Slot Machine is a full-stack Wild West casino-style simulator built a
 
 - Register with email, username, password, date of birth, country, and optional profile data
 - Login, logout, refresh session, and restore session via `GET /me`
-- Forgot-password and reset-password flow through Mailpit in local development
-- Rate limiting on login and forgot-password endpoints
+- Rate limiting on login endpoints
 
 ### Slot gameplay
 
@@ -131,7 +130,7 @@ Copy-Item apps/api/.env.example apps/api/.env
 ### 3. Start local infrastructure
 
 ```bash
-docker compose up -d db mailpit
+docker compose up -d db
 ```
 
 ### 4. Generate Prisma client and run migrations
@@ -159,7 +158,7 @@ npm run dev --workspace=apps/web
 | API | http://localhost:3000 |
 | Swagger UI | http://localhost:3000/docs |
 | Health | http://localhost:3000/health |
-| Mailpit | http://localhost:8025 |
+
 
 ## Docker notes
 
@@ -167,14 +166,13 @@ This repository's `docker-compose.yml` starts backend infrastructure and service
 
 - `db` for PostgreSQL
 - `api` for the Express server
-- `mailpit` for local email capture
 
 The Vite frontend is not containerized in `docker-compose.yml`. For normal development, run the frontend locally on port `5173`.
 
 To run the backend services through Docker:
 
 ```bash
-docker compose up -d db api mailpit
+docker compose up -d db api
 ```
 
 If you change backend code or Prisma setup and need a rebuilt API container:
@@ -286,7 +284,7 @@ Current pipeline steps:
 
 ## Notes
 
-- Mailpit is used only for local development email capture.
+
 - Currency rates are simulated and defined in backend code.
 - KYC is simulated for product flow purposes; it is not connected to any real identity provider.
 - The slot engine and wallet system are designed for virtual balances only.
