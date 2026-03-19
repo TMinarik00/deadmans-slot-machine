@@ -159,6 +159,17 @@ const computedType = computed(() => isPassword.value && showPw.value ? "text" : 
   color: var(--color-text-muted);
 }
 
+/* ── Date input consistency across iOS/Android ── */
+.input[type="date"] {
+  color-scheme: dark;
+  -webkit-text-fill-color: var(--color-text);
+  min-height: 2.75rem;
+}
+
+.input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 /* ── Password toggle ── */
 .input--has-toggle {
   padding-right: 2.8rem;
