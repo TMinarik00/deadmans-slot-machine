@@ -74,14 +74,27 @@
       />
 
       <!-- P0: Date of Birth -->
-      <BaseInput
-        v-model="dateOfBirth"
-        label="Date of Birth"
-        type="date"
-        :required="true"
-        hint="You must be at least 18 years old"
-        class="fade-up fade-up-6"
-      />
+      <div class="fade-up fade-up-6">
+        <label class="dob-label">Date of Birth</label>
+        <div class="dob-row">
+          <BaseSelect
+            v-model="dobDay"
+            placeholder="Day"
+            :options="dayOptions"
+          />
+          <BaseSelect
+            v-model="dobMonth"
+            placeholder="Month"
+            :options="monthOptions"
+          />
+          <BaseSelect
+            v-model="dobYear"
+            placeholder="Year"
+            :options="yearOptions"
+          />
+        </div>
+        <span class="dob-hint">You must be at least 18 years old</span>
+      </div>
 
       <!-- Password + P1: Strength indicator -->
       <div class="fade-up fade-up-7">
@@ -150,10 +163,46 @@ const email = ref("");
 const phone = ref("");
 const username = ref("");
 const country = ref("");
-const dateOfBirth = ref("");
+const dobDay = ref("");
+const dobMonth = ref("");
+const dobYear = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const acceptTerms = ref(false);
+
+// Assemble YYYY-MM-DD from separate selects
+const dateOfBirth = computed(() => {
+  if (dobYear.value && dobMonth.value && dobDay.value) {
+    return `${dobYear.value}-${dobMonth.value.padStart(2, '0')}-${dobDay.value.padStart(2, '0')}`;
+  }
+  return "";
+});
+
+const dayOptions = Array.from({ length: 31 }, (_, i) => ({
+  value: String(i + 1),
+  label: String(i + 1),
+}));
+
+const monthOptions = [
+  { value: "1", label: "Jan" },
+  { value: "2", label: "Feb" },
+  { value: "3", label: "Mar" },
+  { value: "4", label: "Apr" },
+  { value: "5", label: "May" },
+  { value: "6", label: "Jun" },
+  { value: "7", label: "Jul" },
+  { value: "8", label: "Aug" },
+  { value: "9", label: "Sep" },
+  { value: "10", label: "Oct" },
+  { value: "11", label: "Nov" },
+  { value: "12", label: "Dec" },
+];
+
+const currentYear = new Date().getFullYear();
+const yearOptions = Array.from({ length: 100 }, (_, i) => ({
+  value: String(currentYear - 18 - i),
+  label: String(currentYear - 18 - i),
+}));
 
 // Client-side validation
 const confirmPasswordError = computed(() => {
@@ -258,5 +307,29 @@ async function handleRegister() {
   .form-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Date of Birth row */
+.dob-label {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.dob-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.1fr;
+  gap: 0.5rem;
+}
+
+.dob-hint {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  display: block;
+  margin-top: 0.35rem;
 }
 </style>
