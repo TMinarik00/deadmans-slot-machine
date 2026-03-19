@@ -53,8 +53,9 @@ defineEmits(["close"]);
   border: 1px solid var(--color-border);
   border-radius: 16px;
   width: 100%;
-  max-height: 92vh;
-  overflow-y: auto;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   animation: modalIn 0.25s ease-out;
 }
 
@@ -73,6 +74,7 @@ defineEmits(["close"]);
   justify-content: space-between;
   padding: 1.1rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -88,9 +90,15 @@ defineEmits(["close"]);
   color: var(--color-text-muted);
   font-size: 1.5rem;
   cursor: pointer;
-  padding: 0;
+  padding: 0.25rem;
   line-height: 1;
   transition: color 0.15s;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .modal-close:hover { color: var(--color-text); }
 
@@ -99,6 +107,8 @@ defineEmits(["close"]);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-body--center {
@@ -112,9 +122,17 @@ defineEmits(["close"]);
 }
 
 @media (max-width: 480px) {
-  .modal { border-radius: 12px; }
+  .modal {
+    border-radius: 12px;
+    max-height: 80vh;
+  }
   .modal-body { padding: 1rem; }
   .modal-header { padding: 0.9rem 1rem; }
   .modal-footer { padding: 0 1rem 1rem; }
+  .modal-close {
+    font-size: 1.75rem;
+    min-width: 40px;
+    min-height: 40px;
+  }
 }
 </style>
