@@ -125,10 +125,22 @@ defineEmits(["play"]);
   z-index: 2;
 }
 
-/* Theme accent stripe on top */
-.card-theme-gunslinger { border-top: 3px solid #e74c3c; }
-.card-theme-treasure { border-top: 3px solid #f1c40f; }
-.card-theme-desert { border-top: 3px solid #60a5fa; }
+/* Theme accent stripe on top — uses ::after to avoid hover border conflict */
+.game-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 3;
+  border-radius: 16px 16px 0 0;
+  pointer-events: none;
+}
+
+.card-theme-gunslinger::after { background: #e74c3c; }
+.card-theme-treasure::after { background: #f1c40f; }
+.card-theme-desert::after { background: #60a5fa; }
 
 /* Body */
 .card-body {
