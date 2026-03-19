@@ -71,15 +71,16 @@ import { IconRevolver, IconSkull, IconStar, IconBullet } from "../components/ico
 
 <style scoped>
 .auth-layout {
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: var(--color-bg);
   padding: 1rem;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .auth-container {
@@ -88,6 +89,7 @@ import { IconRevolver, IconSkull, IconStar, IconBullet } from "../components/ico
   position: relative;
   z-index: 1;
   padding: 2rem 1.5rem;
+  margin-block: auto;
 }
 
 /* ── Ornamental corner brackets ── */
@@ -305,6 +307,9 @@ import { IconRevolver, IconSkull, IconStar, IconBullet } from "../components/ico
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
+  .auth-layout {
+    padding: 0.85rem;
+  }
   .auth-container {
     max-width: 100%;
     padding: 1.25rem 1rem;
@@ -338,6 +343,9 @@ import { IconRevolver, IconSkull, IconStar, IconBullet } from "../components/ico
 
 /* ── Short viewport scaling (laptops, short browsers) ── */
 @media (max-height: 750px) {
+  .auth-layout {
+    padding-block: 0.75rem 1rem;
+  }
   .auth-container {
     padding: 1rem 1.5rem;
   }
@@ -367,6 +375,9 @@ import { IconRevolver, IconSkull, IconStar, IconBullet } from "../components/ico
 }
 
 @media (max-height: 620px) {
+  .auth-layout {
+    padding-block: 0.5rem 0.75rem;
+  }
   .auth-container {
     padding: 0.5rem 1.25rem;
   }
