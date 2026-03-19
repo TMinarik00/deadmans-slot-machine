@@ -49,8 +49,6 @@ input[type="date"] {
   min-width: 0;
   width: 100%;
   overflow: hidden;
-  -webkit-appearance: none;
-  appearance: none;
 }
 
 /* Smooth scrolling */

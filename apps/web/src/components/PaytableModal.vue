@@ -29,7 +29,8 @@
         class="pt-special-card"
         :class="`pt-special-card--${sym.type}`"
       >
-        <div class="pt-special-svg" v-html="getSymbolSvg(sym.id)"></div>
+        <div v-if="getSymbolSvg(sym.id)" class="pt-special-svg" v-html="getSymbolSvg(sym.id)"></div>
+        <span v-else class="pt-special-emoji">{{ sym.emoji }}</span>
         <div class="pt-special-info">
           <span class="pt-special-name">{{ sym.name }}</span>
           <span class="pt-special-type">{{ sym.type.toUpperCase() }}</span>
@@ -54,7 +55,8 @@
         :key="sym.id"
         class="pt-regular-row"
       >
-        <div class="pt-regular-svg" v-html="getSymbolSvg(sym.id)"></div>
+        <div v-if="getSymbolSvg(sym.id)" class="pt-regular-svg" v-html="getSymbolSvg(sym.id)"></div>
+        <span v-else class="pt-regular-emoji">{{ sym.emoji }}</span>
         <span class="pt-regular-name">{{ sym.name }}</span>
         <div class="pt-regular-pays">
           <span
@@ -345,8 +347,37 @@ function getSymbolSvg(symbolId) {
   }
 
   .pt-regular-svg {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
+
+  .pt-regular-row {
+    padding: 0.35rem 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .pt-regular-name {
+    font-size: 0.72rem;
+    min-width: 50px;
+  }
+
+  .pt-pay-tag {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+  }
+}
+
+/* Emoji fallbacks */
+.pt-special-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.pt-regular-emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
 }
 </style>
