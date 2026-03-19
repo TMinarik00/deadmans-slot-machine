@@ -226,6 +226,16 @@ async function processWithdraw() {
 .input--lg { font-size: 1.4rem; font-weight: 700; text-align: center; padding: 0.7rem; }
 .input--mono { font-family: "Courier New", monospace; letter-spacing: 0.05em; }
 
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a08060' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  cursor: pointer;
+}
+
 /* Method tabs */
 .method-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 .method-tab {
