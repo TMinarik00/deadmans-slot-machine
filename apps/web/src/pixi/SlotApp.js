@@ -143,35 +143,18 @@ export class SlotApp {
     });
 
     const c = this.app.canvas;
+    c.style.width = "100%";
+    c.style.height = "auto";
     c.style.display = "block";
     c.style.margin = "0 auto";
 
     // On desktop, cap at 800px with rounded corners
-    // On mobile, scale to fill the full available viewport
+    // On mobile, fill full width for bigger gameplay
     const isMobile = window.matchMedia("(max-width: 600px)").matches;
     if (!isMobile) {
-      c.style.width = "100%";
-      c.style.height = "auto";
       c.style.maxWidth = W + "px";
       c.style.borderRadius = "12px";
     } else {
-      // Calculate the available viewport space (viewport - navbar)
-      const navH = 56;
-      const availH = window.innerHeight - navH;
-      const availW = window.innerWidth;
-
-      // Scale factor: fit canvas into available space
-      // Use the larger scale to fill viewport (cover), but don't exceed either axis
-      const scaleW = availW / W;
-      const scaleH = availH / this.canvasH;
-      // Use the smaller scale so everything fits, then set both dimensions
-      const scale = Math.min(scaleW, scaleH);
-
-      const displayW = Math.floor(W * scale);
-      const displayH = Math.floor(this.canvasH * scale);
-
-      c.style.width = displayW + "px";
-      c.style.height = displayH + "px";
       c.style.borderRadius = "0";
     }
     containerEl.appendChild(c);
