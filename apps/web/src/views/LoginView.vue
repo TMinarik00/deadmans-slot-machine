@@ -39,8 +39,7 @@
       </BaseButton>
     </form>
 
-    <div class="auth-links fade-up fade-up-4">
-      <RouterLink to="/forgot-password" class="auth-link">Forgot password?</RouterLink>
+    <div class="auth-links fade-up fade-up-4" style="justify-content: center">
       <RouterLink to="/register" class="auth-link">Create account</RouterLink>
     </div>
   </div>

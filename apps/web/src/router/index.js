@@ -12,8 +12,7 @@ import AuthLayout from "../layouts/AuthLayout.vue";
 import DefaultLayout from "../layouts/DefaultLayout.vue";
 import LoginView from "../views/LoginView.vue";
 import RegisterView from "../views/RegisterView.vue";
-import ForgotPasswordView from "../views/ForgotPasswordView.vue";
-import ResetPasswordView from "../views/ResetPasswordView.vue";
+
 import GameView from "../views/GameView.vue";
 import WalletView from "../views/WalletView.vue";
 import ProfileView from "../views/ProfileView.vue";
@@ -30,8 +29,7 @@ const routes = [
       { path: "", redirect: "/login" },
       { path: "login", name: "login", component: LoginView },
       { path: "register", name: "register", component: RegisterView },
-      { path: "forgot-password", name: "forgot-password", component: ForgotPasswordView },
-      { path: "reset-password", name: "reset-password", component: ResetPasswordView },
+
     ],
   },
   // App routes (with navbar, requires auth)
