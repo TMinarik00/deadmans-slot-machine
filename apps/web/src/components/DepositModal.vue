@@ -195,6 +195,11 @@ function formatCardNumber(e) {
 }
 function formatExpiry(e) {
   let val = e.target.value.replace(/\D/g, "").slice(0, 4);
+  // Clamp month to 01-12
+  if (val.length >= 2) {
+    let mm = Math.min(Math.max(parseInt(val.slice(0, 2), 10), 1), 12);
+    val = String(mm).padStart(2, "0") + val.slice(2);
+  }
   if (val.length >= 3) val = val.slice(0, 2) + "/" + val.slice(2);
   cardForm.value.expiry = val;
 }
