@@ -251,7 +251,6 @@ function getSymbolSvg(symbolId) {
   gap: 1px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
-  overflow: hidden;
 }
 
 .pt-regular-row {
