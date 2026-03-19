@@ -41,6 +41,16 @@ html, body {
 /* Make all inputs/selects/buttons respect parent width */
 input, select, textarea, button {
   max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Date input fix - prevent native picker from overflowing on mobile */
+input[type="date"] {
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 /* Smooth scrolling */

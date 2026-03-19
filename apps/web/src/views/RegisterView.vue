@@ -250,5 +250,13 @@ async function handleRegister() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
+  min-width: 0;
+}
+
+/* Stack name fields on very small screens */
+@media (max-width: 360px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
