@@ -42,10 +42,9 @@ Dead Man's Slot Machine is a full-stack Wild West casino-style simulator built a
 
 ### Wallets and virtual economy
 
-- Ten supported currencies: `CHIPS`, `USD`, `EUR`, `GBP`, `BTC`, `ETH`, `LTC`, `SOL`, `DOGE`, `ADA`
 - Welcome bonus of `1000 CHIPS` when a user first gets a CHIPS wallet
-- Deposit, withdraw, and convert between currencies using simulated rates
-- Immutable transaction ledger for deposits, withdrawals, conversions, bets, wins, bonuses, and rewards
+- Deposit and withdraw CHIPS
+- Immutable transaction ledger for deposits, withdrawals, bets, wins, bonuses, and rewards
 
 ### Progression and profile
 
@@ -224,7 +223,7 @@ Interactive API documentation is served from `apps/api/openapi.yaml` at `/docs`.
 | --- | --- |
 | Health | `GET /health` |
 | Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/forgot-password`, `POST /auth/reset-password`, `GET /me` |
-| Wallet | `GET /wallet`, `GET /wallet/transactions`, `POST /wallet/deposit`, `POST /wallet/withdraw`, `POST /wallet/convert`, `GET /wallet/rates` |
+| Wallet | `GET /wallet`, `GET /wallet/transactions`, `POST /wallet/deposit`, `POST /wallet/withdraw` |
 | Game | `GET /game/list`, `GET /game/:id`, `POST /game/spin` |
 | Profile | `GET /profile`, `POST /profile/kyc`, `POST /profile/edit`, `POST /profile/delete`, `POST /profile/daily-bonus`, `GET /achievements`, `POST /achievements/:id/claim`, `GET /leaderboard` |
 
