@@ -450,16 +450,23 @@ function delay(ms) {
   margin: 0 auto;
 }
 
-/* Mobile: fill full width, remove gaps */
+/* Mobile: fill full viewport, pin game to top */
 @media (max-width: 600px) {
   .slot-machine {
     max-width: 100%;
     margin: 0;
     padding: 0;
+    min-height: calc(100vh - 60px);
+    min-height: calc(100dvh - 60px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
   }
 
   .canvas-wrap {
     max-width: 100%;
+    width: 100%;
     margin: 0;
   }
 }

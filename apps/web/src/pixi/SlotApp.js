@@ -193,7 +193,7 @@ export class SlotApp {
       rows * this.cellH + 2 * (FRAME_BORDER + FRAME_PAD);
     this.ctrlY = REEL_Y + this.reelFrameH + 14;
     // Compact stepper controls on mobile, chip layout on desktop
-    const ctrlH = this.isMobile ? 140 : 105;
+    const ctrlH = this.isMobile ? 155 : 105;
     this.autoY = this.ctrlY + ctrlH + 6;
     this.canvasH = this.autoY + 38 + 10;
     this.symSize = Math.min(this.reelW, this.cellH) * 0.72;
@@ -654,7 +654,7 @@ export class SlotApp {
     const stage = this.app.stage;
     const y = this.ctrlY;
     const mob = this.isMobile;
-    const ctrlH = mob ? 140 : 105;
+    const ctrlH = mob ? 155 : 105;
 
     // Controls background — subtle dark area, no bordered panel
     const bg = new Graphics();
@@ -667,77 +667,77 @@ export class SlotApp {
 
     if (mob) {
       // ═══ MOBILE: Two-row casino layout ═══
-      // Row 1: Info strip  — BET value | BALANCE | AUTO value
-      // Row 2: Action row  — [◀ ▶] BET | [SPIN] | [◀ ▶] AUTO
+      // Row 1: Info strip  — BET / BALANCE / AUTO (label above, value below)
+      // Row 2: Action row  — [◀  ▶] BET | [SPIN] | [◀  ▶] AUTO
 
-      const infoY = y + 4;     // Info strip top
-      const actionY = y + 40;  // Action row top
+      const infoY = y + 2;     // Info strip top
+      const actionY = y + 48;  // Action row top
       const centerX = W / 2;
       const leftX = FRAME_X + 70;
       const rightX = W - FRAME_X - 70;
 
       // ── Info strip background ──
-      bg.roundRect(FRAME_X + 2, infoY, FRAME_W - 4, 34, 6);
+      bg.roundRect(FRAME_X + 2, infoY, FRAME_W - 4, 44, 6);
       bg.fill({ color: 0x000000, alpha: 0.15 });
 
-      // ── BET info (left) ──
+      // ── BET info (left) — stacked ──
       this._betIndex = 0;
       const betOpts = this.game.betOptions;
 
-      const betInfoLabel = new Text({ text: "BET", style: uiStyle(12, 0x806040, "700") });
-      betInfoLabel.anchor.set(0.5, 0.5);
-      betInfoLabel.x = leftX - 26;
-      betInfoLabel.y = infoY + 17;
+      const betInfoLabel = new Text({ text: "BET", style: uiStyle(11, 0x806040, "700") });
+      betInfoLabel.anchor.set(0.5, 0);
+      betInfoLabel.x = leftX;
+      betInfoLabel.y = infoY + 4;
       stage.addChild(betInfoLabel);
 
       this._betValueText = new Text({
         text: String(betOpts[0]),
         style: uiStyle(22, t.accent, "800"),
       });
-      this._betValueText.anchor.set(0.5, 0.5);
-      this._betValueText.x = leftX + 14;
-      this._betValueText.y = infoY + 17;
+      this._betValueText.anchor.set(0.5, 0);
+      this._betValueText.x = leftX;
+      this._betValueText.y = infoY + 18;
       stage.addChild(this._betValueText);
 
-      // ── BALANCE info (center) ──
-      const balInfoLabel = new Text({ text: "BALANCE", style: uiStyle(10, 0x806040, "700") });
-      balInfoLabel.anchor.set(0.5, 0.5);
-      balInfoLabel.x = centerX - 36;
-      balInfoLabel.y = infoY + 17;
+      // ── BALANCE info (center) — stacked ──
+      const balInfoLabel = new Text({ text: "BALANCE", style: uiStyle(11, 0x806040, "700") });
+      balInfoLabel.anchor.set(0.5, 0);
+      balInfoLabel.x = centerX;
+      balInfoLabel.y = infoY + 4;
       stage.addChild(balInfoLabel);
 
       this.balanceText = new Text({
         text: "0",
         style: uiStyle(22, t.accent, "800"),
       });
-      this.balanceText.anchor.set(0.5, 0.5);
-      this.balanceText.x = centerX + 28;
-      this.balanceText.y = infoY + 17;
+      this.balanceText.anchor.set(0.5, 0);
+      this.balanceText.x = centerX;
+      this.balanceText.y = infoY + 18;
       stage.addChild(this.balanceText);
 
-      // ── AUTO info (right) ──
+      // ── AUTO info (right) — stacked ──
       const autoOpts = [1, 5, 10, 100];
       this._autoIndex = 0;
 
-      const autoInfoLabel = new Text({ text: "AUTO", style: uiStyle(12, 0x806040, "700") });
-      autoInfoLabel.anchor.set(0.5, 0.5);
-      autoInfoLabel.x = rightX - 20;
-      autoInfoLabel.y = infoY + 17;
+      const autoInfoLabel = new Text({ text: "AUTO", style: uiStyle(11, 0x806040, "700") });
+      autoInfoLabel.anchor.set(0.5, 0);
+      autoInfoLabel.x = rightX;
+      autoInfoLabel.y = infoY + 4;
       stage.addChild(autoInfoLabel);
 
       this._autoValueText = new Text({
         text: "1x",
         style: uiStyle(22, t.accent, "800"),
       });
-      this._autoValueText.anchor.set(0.5, 0.5);
-      this._autoValueText.x = rightX + 22;
-      this._autoValueText.y = infoY + 17;
+      this._autoValueText.anchor.set(0.5, 0);
+      this._autoValueText.x = rightX;
+      this._autoValueText.y = infoY + 18;
       stage.addChild(this._autoValueText);
 
       // ── Action row: BET arrows (left) ──
       const arrowY = actionY + 48; // vertically centered with spin
 
-      const betLeft = this._createArrowButton(leftX - 24, arrowY, "<", t);
+      const betLeft = this._createArrowButton(leftX - 42, arrowY, "<", t);
       betLeft.on("pointerdown", () => {
         if (this._spinning) return;
         this._betIndex = (this._betIndex - 1 + betOpts.length) % betOpts.length;
@@ -747,7 +747,7 @@ export class SlotApp {
       });
       stage.addChild(betLeft);
 
-      const betRight = this._createArrowButton(leftX + 24, arrowY, ">", t);
+      const betRight = this._createArrowButton(leftX + 42, arrowY, ">", t);
       betRight.on("pointerdown", () => {
         if (this._spinning) return;
         this._betIndex = (this._betIndex + 1) % betOpts.length;
@@ -761,7 +761,7 @@ export class SlotApp {
       this._buildSpinButton(actionY, t, stage);
 
       // ── Action row: AUTO arrows (right) ──
-      const autoLeft = this._createArrowButton(rightX - 24, arrowY, "<", t);
+      const autoLeft = this._createArrowButton(rightX - 42, arrowY, "<", t);
       autoLeft.on("pointerdown", () => {
         if (this._spinning) return;
         this._autoIndex = (this._autoIndex - 1 + autoOpts.length) % autoOpts.length;
@@ -771,7 +771,7 @@ export class SlotApp {
       });
       stage.addChild(autoLeft);
 
-      const autoRight = this._createArrowButton(rightX + 24, arrowY, ">", t);
+      const autoRight = this._createArrowButton(rightX + 42, arrowY, ">", t);
       autoRight.on("pointerdown", () => {
         if (this._spinning) return;
         this._autoIndex = (this._autoIndex + 1) % autoOpts.length;
@@ -895,7 +895,7 @@ export class SlotApp {
 
     // Circle background
     const bg = new Graphics();
-    bg.circle(0, 0, 28);
+    bg.circle(0, 0, 34);
     bg.fill({ color: theme.frameBorder, alpha: 0.3 });
     bg.stroke({ color: theme.frameBorder, alpha: 0.4, width: 1 });
     ct.addChild(bg);
@@ -903,7 +903,7 @@ export class SlotApp {
     // Arrow text
     const arrow = new Text({
       text: direction,
-      style: uiStyle(22, 0xc8a050, "700"),
+      style: uiStyle(28, 0xc8a050, "700"),
     });
     arrow.anchor.set(0.5, 0.5);
     ct.addChild(arrow);
@@ -917,8 +917,9 @@ export class SlotApp {
 
   _buildSpinButton(ctrlY, t, stage) {
     const spinX = W / 2;
-    const spinY = ctrlY + (this.isMobile ? 65 : 52);
-    const spinR = 42;
+    const mob = this.isMobile;
+    const spinY = ctrlY + (mob ? 65 : 52);
+    const spinR = mob ? 52 : 42;
 
     // All spin button visuals in a container positioned at center
     // so scaling pivots from the button's center.
@@ -963,7 +964,7 @@ export class SlotApp {
     // Spin text
     this.spinBtnText = new Text({
       text: "SPIN",
-      style: headerStyle(20, 0x1a0f0a),
+      style: headerStyle(mob ? 26 : 20, 0x1a0f0a),
     });
     this.spinBtnText.anchor.set(0.5, 0.5);
     spinCt.addChild(this.spinBtnText);
@@ -1545,25 +1546,26 @@ export class SlotApp {
 
   _updateSpinLabel() {
     const count = this._currentAutoCount;
+    const mob = this.isMobile;
     if (count > 1) {
       this.spinBtnText.text = "SPIN";
-      this.spinBtnText.style.fontSize = 15;
-      this.spinBtnText.y = -6;
+      this.spinBtnText.style.fontSize = mob ? 20 : 15;
+      this.spinBtnText.y = mob ? -8 : -6;
       // Show count badge below spin text
       if (!this._spinCountText) {
         this._spinCountText = new Text({
           text: "",
-          style: uiStyle(12, 0x1a0f0a, "800"),
+          style: uiStyle(mob ? 18 : 12, 0x1a0f0a, "800"),
         });
         this._spinCountText.anchor.set(0.5, 0.5);
         this._spinCt.addChild(this._spinCountText);
       }
       this._spinCountText.text = `${count}x`;
-      this._spinCountText.y = 10;
+      this._spinCountText.y = mob ? 14 : 10;
       this._spinCountText.visible = true;
     } else {
       this.spinBtnText.text = "SPIN";
-      this.spinBtnText.style.fontSize = 20;
+      this.spinBtnText.style.fontSize = mob ? 26 : 20;
       this.spinBtnText.y = 0;
       if (this._spinCountText) {
         this._spinCountText.visible = false;
