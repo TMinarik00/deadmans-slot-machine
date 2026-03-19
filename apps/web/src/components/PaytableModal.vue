@@ -70,21 +70,23 @@
       </div>
     </div>
 
-    <!-- Bet info -->
-    <div class="pt-footer">
-      <div class="pt-footer-item">
-        <span class="pt-footer-label">Min Bet</span>
-        <span class="pt-footer-val">{{ game.betOptions?.[0] || 10 }}</span>
+    <!-- Bet info - in footer slot so it stays fixed while body scrolls -->
+    <template #footer>
+      <div class="pt-footer">
+        <div class="pt-footer-item">
+          <span class="pt-footer-label">Min Bet</span>
+          <span class="pt-footer-val">{{ game.betOptions?.[0] || 10 }}</span>
+        </div>
+        <div class="pt-footer-item">
+          <span class="pt-footer-label">Max Bet</span>
+          <span class="pt-footer-val">{{ game.betOptions?.[game.betOptions.length - 1] || 500 }}</span>
+        </div>
+        <div class="pt-footer-item">
+          <span class="pt-footer-label">RTP</span>
+          <span class="pt-footer-val">~96%</span>
+        </div>
       </div>
-      <div class="pt-footer-item">
-        <span class="pt-footer-label">Max Bet</span>
-        <span class="pt-footer-val">{{ game.betOptions?.[game.betOptions.length - 1] || 500 }}</span>
-      </div>
-      <div class="pt-footer-item">
-        <span class="pt-footer-label">RTP</span>
-        <span class="pt-footer-val">~96%</span>
-      </div>
-    </div>
+    </template>
   </BaseModal>
 </template>
 
@@ -250,7 +252,6 @@ function getSymbolSvg(symbolId) {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 1rem;
 }
 
 .pt-regular-row {
