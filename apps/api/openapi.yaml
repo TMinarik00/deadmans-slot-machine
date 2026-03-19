@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Vockice Slot Machine API
+  title: Dead Man's Slot Machine API
   description: Wild West themed slot machine game API (simulation only, no real money)
-  version: 0.1.0
+  version: 0.5.0
   contact:
     name: Tin Minarik
     email: tinminarik00@gmail.com
@@ -10,6 +10,90 @@ info:
 servers:
   - url: http://localhost:3000
     description: Local development
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    Currency:
+      type: string
+      enum: [CHIPS, USD, EUR, GBP, BTC, ETH, LTC, SOL, DOGE, ADA]
+
+    Wallet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        currency:
+          $ref: "#/components/schemas/Currency"
+        balance:
+          type: string
+          description: Decimal balance as string for precision
+        updatedAt:
+          type: string
+          format: date-time
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [DEPOSIT, WITHDRAWAL, CONVERSION_IN, CONVERSION_OUT, BET, WIN]
+        amount:
+          type: string
+        balanceAfter:
+          type: string
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        wallet:
+          type: object
+          properties:
+            currency:
+              $ref: "#/components/schemas/Currency"
 
 paths:
   /health:
@@ -35,3 +119,1029 @@ paths:
                   database:
                     type: string
                     enum: [connected, disconnected]
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, username, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: cowboy@deadmans.com
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 20
+                  example: wild_bill
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  example: shootFirst123
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  accessToken:
+                    type: string
+        "409":
+          description: Email or username already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: cowboy@deadmans.com
+                password:
+                  type: string
+                  example: shootFirst123
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Get a new access token using a refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        "401":
+          description: Invalid or expired refresh token
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out (revoke refresh token)
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password reset email
+      description: Always returns success to prevent account enumeration
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: cowboy@deadmans.com
+      responses:
+        "200":
+          description: Reset email sent (if account exists)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password using a token from email
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+      responses:
+        "200":
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Invalid or expired reset token
+
+  /wallet:
+    get:
+      tags: [Wallet]
+      summary: List all wallets for the current user
+      description: Returns all currency wallets. Auto-creates a CHIPS wallet with 1000 welcome bonus on first access.
+      operationId: getWallets
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User wallets and conversion rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallets:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Wallet"
+                  rates:
+                    type: object
+                    description: Conversion rates (currency → CHIPS)
+                    example: { CHIPS: 1, USD: 100, EUR: 120, GBP: 140 }
+
+  /wallet/transactions:
+    get:
+      tags: [Wallet]
+      summary: Get transaction history
+      description: Returns the 50 most recent transactions across all wallets
+      operationId: getTransactions
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+
+  /wallet/deposit:
+    post:
+      tags: [Wallet]
+      summary: Deposit virtual funds
+      operationId: deposit
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                currency:
+                  $ref: "#/components/schemas/Currency"
+                  default: CHIPS
+                amount:
+                  type: number
+                  minimum: 0.01
+                  maximum: 1000000
+                  example: 500
+      responses:
+        "200":
+          description: Deposit successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallet:
+                    $ref: "#/components/schemas/Wallet"
+                  transaction:
+                    $ref: "#/components/schemas/Transaction"
+
+  /wallet/withdraw:
+    post:
+      tags: [Wallet]
+      summary: Withdraw virtual funds
+      operationId: withdraw
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                currency:
+                  $ref: "#/components/schemas/Currency"
+                  default: CHIPS
+                amount:
+                  type: number
+                  minimum: 0.01
+                  example: 100
+      responses:
+        "200":
+          description: Withdrawal successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallet:
+                    $ref: "#/components/schemas/Wallet"
+                  transaction:
+                    $ref: "#/components/schemas/Transaction"
+        "400":
+          description: Insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /wallet/convert:
+    post:
+      tags: [Wallet]
+      summary: Convert between currencies
+      description: "Converts virtual funds between currencies. Rates: 1 USD = 100 CHIPS, 1 EUR = 120 CHIPS, 1 GBP = 140 CHIPS."
+      operationId: convertCurrency
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from, to, amount]
+              properties:
+                from:
+                  $ref: "#/components/schemas/Currency"
+                to:
+                  $ref: "#/components/schemas/Currency"
+                amount:
+                  type: number
+                  minimum: 0.01
+                  example: 10
+      responses:
+        "200":
+          description: Conversion successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    $ref: "#/components/schemas/Wallet"
+                  dest:
+                    $ref: "#/components/schemas/Wallet"
+                  converted:
+                    type: number
+                    description: Amount credited to destination
+                  rate:
+                    type: string
+                    description: Human-readable rate
+        "400":
+          description: Insufficient balance or invalid conversion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /wallet/rates:
+    get:
+      tags: [Wallet]
+      summary: Get currency conversion rates
+      operationId: getRates
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Conversion rates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rates:
+                    type: object
+                    example: { CHIPS: 1, USD: 100, EUR: 120, GBP: 140 }
+
+  /me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      operationId: getMe
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+
+  /game/list:
+    get:
+      tags: [Game]
+      summary: List available slot games
+      description: Returns all slot game configs including symbols, ways, bet options, and feature flags.
+      operationId: getGameList
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of available games
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  games:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: dead-mans-gun
+                        name:
+                          type: string
+                          example: "Dead Man's Gun"
+                        description:
+                          type: string
+                        theme:
+                          type: string
+                          enum: [gunslinger, treasure, desert, canyon]
+                        reels:
+                          type: integer
+                          example: 5
+                        rows:
+                          type: integer
+                          example: 4
+                        ways:
+                          type: integer
+                          example: 1024
+                        betOptions:
+                          type: array
+                          items:
+                            type: number
+                          example: [10, 20, 50, 100, 200, 500]
+                        symbols:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              emoji:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                                enum: [wild, scatter, regular, bonus]
+                              payouts:
+                                type: object
+                                nullable: true
+                              scatterPayouts:
+                                type: object
+                                nullable: true
+
+  /game/{id}:
+    get:
+      tags: [Game]
+      summary: Get a single game config
+      operationId: getGame
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: dead-mans-gun
+      responses:
+        "200":
+          description: Game config
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    type: object
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /game/spin:
+    post:
+      tags: [Game]
+      summary: Spin the slot machine
+      description: |
+        Deducts bet from CHIPS wallet, generates a random result, credits any winnings.
+        Supports auto-spin with `spins` parameter (1, 5, 10, or 100).
+        Single spin (spins=1) returns a flat result. Multi-spin returns an array of results plus a summary.
+      operationId: spin
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameId, betAmount]
+              properties:
+                gameId:
+                  type: string
+                  example: dead-mans-gun
+                betAmount:
+                  type: number
+                  description: Must be one of the game's betOptions
+                  example: 20
+                spins:
+                  type: integer
+                  description: "Number of spins to perform (auto-spin). Default: 1"
+                  enum: [1, 5, 10, 100]
+                  default: 1
+      responses:
+        "200":
+          description: Spin result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gameId:
+                    type: string
+                  grid:
+                    type: array
+                    description: "grid[reel][row] = symbolId"
+                    items:
+                      type: array
+                      items:
+                        type: string
+                  wins:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbolId:
+                          type: string
+                        count:
+                          type: integer
+                        ways:
+                          type: integer
+                        positions:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              type: integer
+                        payout:
+                          type: number
+                        isScatter:
+                          type: boolean
+                  totalWin:
+                    type: number
+                  totalBet:
+                    type: number
+                  balance:
+                    type: number
+                    description: CHIPS balance after spin
+                  featureTriggered:
+                    type: object
+                    nullable: true
+                    description: "Feature trigger info (null if none). Reserved for future mini-games."
+                  symbolMap:
+                    type: object
+                    description: "Map of symbolId → {emoji, name, type}"
+                  xpEarned:
+                    type: integer
+                    description: XP earned from this spin
+                  levelUp:
+                    type: object
+                    nullable: true
+                    description: "Level-up info (null if no level-up)"
+                    properties:
+                      newLevel:
+                        type: integer
+                      reward:
+                        type: integer
+                        description: CHIPS rewarded for leveling up
+        "200  (multi-spin)":
+          description: "Multi-spin result (when spins > 1)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  spins:
+                    type: array
+                    description: Individual spin results
+                    items:
+                      type: object
+                      properties:
+                        grid:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              type: string
+                        wins:
+                          type: array
+                          items:
+                            type: object
+                        totalWin:
+                          type: number
+                        totalBet:
+                          type: number
+                        symbolMap:
+                          type: object
+                  summary:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: Number of spins performed
+                      totalBet:
+                        type: number
+                      totalWin:
+                        type: number
+                      netResult:
+                        type: number
+                        description: totalWin - totalBet
+                      wins:
+                        type: integer
+                        description: Number of winning spins
+                      biggestWin:
+                        type: number
+                      xpEarned:
+                        type: integer
+                      levelUp:
+                        type: object
+                        nullable: true
+                        properties:
+                          newLevel:
+                            type: integer
+                          reward:
+                            type: integer
+                  balance:
+                    type: number
+                    description: CHIPS balance after all spins
+        "400":
+          description: Invalid bet or insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Game not found
+
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Get current user profile with stats
+      description: Returns user info, level, XP progress, play stats, and daily bonus availability.
+      operationId: getProfile
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                        format: email
+                      username:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+                      level:
+                        type: integer
+                        example: 3
+                      xp:
+                        type: integer
+                        example: 450
+                      xpProgress:
+                        type: integer
+                        description: XP earned within current level
+                      xpNeeded:
+                        type: integer
+                        description: Total XP needed to complete current level
+                      nextLevelXp:
+                        type: integer
+                        description: Cumulative XP required for next level
+                      stats:
+                        type: object
+                        properties:
+                          totalSpins:
+                            type: integer
+                          totalWins:
+                            type: integer
+                          totalWagered:
+                            type: string
+                          totalWon:
+                            type: string
+                          biggestWin:
+                            type: string
+                          favoriteGameId:
+                            type: string
+                            nullable: true
+                      dailyBonus:
+                        type: object
+                        properties:
+                          available:
+                            type: boolean
+                          nextAvailableAt:
+                            type: string
+                            format: date-time
+                            nullable: true
+                          reward:
+                            type: integer
+                            example: 100
+        "401":
+          description: Not authenticated
+
+  /profile/edit:
+    post:
+      tags: [Profile]
+      summary: Edit profile (change username or password)
+      description: Requires current password for verification. Provide new username and/or new password.
+      operationId: editProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 20
+                  example: new_cowboy
+                currentPassword:
+                  type: string
+                  example: oldPassword123
+                newPassword:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  example: newPassword456
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Validation failed or no changes
+        "401":
+          description: Incorrect current password
+        "409":
+          description: Username already taken
+
+  /profile/delete:
+    post:
+      tags: [Profile]
+      summary: Delete account permanently
+      description: Permanently deletes user account and all associated data. Requires password confirmation.
+      operationId: deleteProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  example: myPassword123
+      responses:
+        "200":
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "401":
+          description: Incorrect password
+
+  /profile/daily-bonus:
+    post:
+      tags: [Profile]
+      summary: Claim daily bonus
+      description: Awards 100 CHIPS and 25 XP. Can be claimed once every 24 hours.
+      operationId: claimDailyBonus
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Daily bonus claimed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Daily bonus claimed!"
+                  xpAwarded:
+                    type: integer
+                    example: 25
+                  chipsAwarded:
+                    type: integer
+                    example: 100
+                  levelUpRewards:
+                    type: integer
+                    description: Extra CHIPS from level-up (0 if no level-up)
+                  newLevel:
+                    type: integer
+                  newXp:
+                    type: integer
+                  balance:
+                    type: string
+                    description: CHIPS balance after bonus
+                  nextAvailableAt:
+                    type: string
+                    format: date-time
+        "400":
+          description: Already claimed within 24 hours
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /achievements:
+    get:
+      tags: [Profile]
+      summary: List all achievements with user progress
+      description: Returns all achievement definitions with the current user's progress, unlock status, and claim status.
+      operationId: getAchievements
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Achievement list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  achievements:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: first_spin
+                        name:
+                          type: string
+                          example: "First Spin"
+                        description:
+                          type: string
+                        category:
+                          type: string
+                          enum: [general, wins, levels, game]
+                        threshold:
+                          type: integer
+                        progress:
+                          type: integer
+                        unlocked:
+                          type: boolean
+                        claimed:
+                          type: boolean
+                        claimedAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        xpReward:
+                          type: integer
+                        chipsReward:
+                          type: integer
+
+  /achievements/{id}/claim:
+    post:
+      tags: [Profile]
+      summary: Claim an achievement reward
+      description: Claims CHIPS and XP reward for an unlocked achievement. Each achievement can only be claimed once.
+      operationId: claimAchievement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: first_spin
+      responses:
+        "200":
+          description: Achievement reward claimed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  achievementId:
+                    type: string
+                  name:
+                    type: string
+                  chipsAwarded:
+                    type: integer
+                  xpAwarded:
+                    type: integer
+                  levelUpRewards:
+                    type: integer
+                  newLevel:
+                    type: integer
+                  newXp:
+                    type: integer
+        "400":
+          description: Not unlocked or already claimed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Achievement not found
+
+  /leaderboard:
+    get:
+      tags: [Profile]
+      summary: Get leaderboard
+      description: "Returns top 20 players. Query param `type` selects ranking: totalWon (default), biggestWin, or level. Query param `period` filters by time window: daily, weekly, monthly, or allTime (default)."
+      operationId: getLeaderboard
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [totalWon, biggestWin, level]
+            default: totalWon
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, allTime]
+            default: allTime
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  period:
+                    type: string
+                  leaderboard:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                        username:
+                          type: string
+                        level:
+                          type: integer
+                        totalSpins:
+                          type: integer
+                        totalWon:
+                          type: string
+                        biggestWin:
+                          type: string

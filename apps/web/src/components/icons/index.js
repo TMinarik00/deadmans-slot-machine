@@ -1,0 +1,10 @@
+export { default as IconRevolver } from "./IconRevolver.vue";
+export { default as IconCard } from "./IconCard.vue";
+export { default as IconDice } from "./IconDice.vue";
+export { default as IconHorseshoe } from "./IconHorseshoe.vue";
+export { default as IconStar } from "./IconStar.vue";
+export { default as IconSkull } from "./IconSkull.vue";
+export { default as IconBullet } from "./IconBullet.vue";
+export { default as IconTarget } from "./IconTarget.vue";
+export { default as IconCactus } from "./IconCactus.vue";
+export { default as IconHat } from "./IconHat.vue";

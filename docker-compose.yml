@@ -1,4 +1,4 @@
-# Docker Compose for Vockice Slot Machine
+# Docker Compose for Dead Man's Slot Machine
 # Run: docker compose up
 # This starts PostgreSQL, the Express API, and Mailpit (email catcher).
 
@@ -7,15 +7,15 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: vockice
-      POSTGRES_PASSWORD: vockice_secret
-      POSTGRES_DB: vockice
+      POSTGRES_USER: deadmans
+      POSTGRES_PASSWORD: deadmans_secret
+      POSTGRES_DB: deadmans
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vockice"]
+      test: ["CMD-SHELL", "pg_isready -U deadmans"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -28,7 +28,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://vockice:vockice_secret@db:5432/vockice
+      DATABASE_URL: postgresql://deadmans:deadmans_secret@db:5432/deadmans
       PORT: 3000
       CORS_ORIGIN: http://localhost:5173
     depends_on:

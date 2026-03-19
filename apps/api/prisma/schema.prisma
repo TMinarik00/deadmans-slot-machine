@@ -1,6 +1,10 @@
-// Prisma schema for Vockice Slot Machine
-// This file defines our database models. Prisma uses it to generate
-// the DB client and migration files.
+// Prisma schema for Dead Man's Slot Machine
+// Defines database models. Run `npx prisma db push` to sync with DB.
+//
+// Normalization:
+//   1NF - all columns are atomic (no arrays/nested objects)
+//   2NF - every non-key column depends on the full primary key
+//   3NF - no transitive dependencies (tokens reference User by FK, not by copying user data)
 
 generator client {
   provider = "prisma-client-js"
@@ -9,4 +13,177 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// --- User: stores account info, hashed password, and progression stats ---
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique             // unique constraint = automatic index
+  username  String   @unique             // unique constraint = automatic index
+  password  String                       // Argon2id hash, never plain text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Profile info ---
+  firstName       String?                  // P2: optional first name
+  lastName        String?                  // P2: optional last name
+  phone           String?                  // P2: optional phone number
+
+  // --- Registration metadata ---
+  dateOfBirth     DateTime?                // P0: date of birth for 18+ verification
+  termsAcceptedAt DateTime?                // P0: timestamp of T&C acceptance
+  country         String?                  // P1: ISO 3166-1 alpha-2 code (e.g. "BA", "US")
+  kycStatus       String   @default("NONE") // KYC status: NONE, PENDING, VERIFIED, REJECTED
+
+  // --- Progression ---
+  xp             Int      @default(0)    // total experience points earned
+  level          Int      @default(1)    // current level (starts at 1)
+
+  // --- Aggregated stats (denormalized for fast profile/leaderboard queries) ---
+  totalSpins     Int      @default(0)
+  totalWins      Int      @default(0)    // number of winning spins
+  totalWagered   Decimal  @default(0) @db.Decimal(18, 2)
+  totalWon       Decimal  @default(0) @db.Decimal(18, 2)
+  biggestWin     Decimal  @default(0) @db.Decimal(18, 2)
+  favoriteGameId String?                 // game with most spins
+
+  // --- Daily bonus ---
+  lastDailyBonus DateTime?               // last time daily bonus was claimed
+
+  resetTokens    PasswordResetToken[]
+  refreshTokens  RefreshToken[]
+  wallets        Wallet[]
+  transactions   Transaction[]
+  achievements   UserAchievement[]
+  gameStats      UserGameStats[]
+}
+
+// --- PasswordResetToken: one-time token for "forgot password" flow ---
+// The token itself is hashed (SHA-256) so even if the DB leaks,
+// nobody can use stolen tokens.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tokenHash String                       // SHA-256 hash of the actual token
+  expiresAt DateTime                     // token is only valid until this time
+  usedAt    DateTime?                    // set when consumed (prevents reuse)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@index([tokenHash])                   // fast lookup when user submits a reset token
+  @@index([userId])                      // fast lookup of all tokens for a user
+}
+
+// --- RefreshToken: long-lived token used to get new access tokens ---
+// Access tokens (JWTs) expire in 15 min. Refresh tokens last 7 days
+// and can be revoked individually (e.g. on logout).
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String                       // SHA-256 hash of the actual token
+  expiresAt DateTime                     // token validity window
+  revokedAt DateTime?                    // set on logout to invalidate
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@index([tokenHash])                   // fast lookup during token refresh
+  @@index([userId])                      // fast lookup/cleanup of user sessions
+}
+
+// --- Currency: supported virtual currencies ---
+enum Currency {
+  CHIPS // main game currency used for bets/wins
+  USD
+  EUR
+  GBP
+  BTC
+  ETH
+  LTC
+  SOL
+  DOGE
+  ADA
+}
+
+// --- TransactionType: categorizes wallet movements ---
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  CONVERSION_IN    // received from currency conversion
+  CONVERSION_OUT   // spent on currency conversion
+  BET
+  WIN
+  DAILY_BONUS      // daily login bonus
+  LEVEL_REWARD     // CHIPS reward for leveling up
+  ACHIEVEMENT_REWARD // CHIPS reward for claiming an achievement
+}
+
+// --- Wallet: one per user per currency ---
+// Users can hold balances in multiple currencies and convert between them.
+// CHIPS is the primary currency used for playing the slot machine.
+model Wallet {
+  id        String   @id @default(uuid())
+  currency  Currency @default(CHIPS)
+  balance   Decimal  @default(0) @db.Decimal(18, 2) // 18 digits, 2 decimal places
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@unique([userId, currency])           // one wallet per currency per user
+  @@index([userId])                      // fast lookup of all user wallets
+}
+
+// --- Transaction: immutable ledger of all wallet movements ---
+// Every deposit, withdrawal, conversion, bet, and win is recorded here.
+// balanceAfter provides a running balance for audit/display.
+model Transaction {
+  id           String          @id @default(uuid())
+  type         TransactionType
+  amount       Decimal         @db.Decimal(18, 2) // positive = credit, negative = debit
+  balanceAfter Decimal         @db.Decimal(18, 2) // wallet balance after this transaction
+  note         String?                            // optional description (e.g. "Convert USD→CHIPS")
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletId     String
+  wallet       Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+
+  @@index([userId])                      // transaction history per user
+  @@index([walletId])                    // transaction history per wallet
+}
+
+// --- UserAchievement: tracks user progress toward each achievement ---
+// Achievement definitions live in code (lib/progression.js).
+// This table only stores per-user progress and claim status.
+model UserAchievement {
+  id            String    @id @default(uuid())
+  achievementId String                       // references key from ACHIEVEMENTS constant
+  progress      Int       @default(0)        // current progress toward threshold
+  unlockedAt    DateTime?                    // when threshold was reached
+  claimed       Boolean   @default(false)    // whether CHIPS/XP reward was claimed
+  claimedAt     DateTime?                    // when reward was claimed
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+
+  @@unique([userId, achievementId])          // one row per achievement per user
+  @@index([userId])                          // fast lookup of all user achievements
+}
+
+// --- UserGameStats: per-game spin/win statistics ---
+// Denormalized counters for fast profile display and game-specific achievements.
+model UserGameStats {
+  id         String  @id @default(uuid())
+  gameId     String                          // e.g. "dead-mans-gun"
+  spins      Int     @default(0)
+  wins       Int     @default(0)
+  totalWon   Decimal @default(0) @db.Decimal(18, 2)
+  biggestWin Decimal @default(0) @db.Decimal(18, 2)
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])                 // one row per game per user
+  @@index([userId])                          // fast lookup of all game stats for a user
 }

@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for the Vockice API
+# Multi-stage Dockerfile for the Dead Man's Slot Machine API
 # Stage 1: install dependencies
 # Stage 2: run the app (smaller final image)
 
