@@ -9,19 +9,19 @@
     <nav class="navbar">
       <div class="nav-inner">
         <!-- Logo -->
-        <RouterLink to="/app" class="nav-logo">
+        <a href="#" class="nav-logo" @click.prevent="goToLobby">
           <span class="nav-logo-icon">
             <IconSkull />
           </span>
           <span class="nav-logo-text">Dead Man's</span>
-        </RouterLink>
+        </a>
 
         <!-- Desktop center nav -->
         <div class="nav-center">
-          <RouterLink to="/app" class="nav-link" :class="{ 'is-exact': isExactApp }">
+          <a href="#" class="nav-link" :class="{ 'is-exact': isExactApp }" @click.prevent="goToLobby">
             <svg class="nav-link-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L3 9h2v7a1 1 0 001 1h3v-5h2v5h3a1 1 0 001-1V9h2L10 2z"/></svg>
             Lobby
-          </RouterLink>
+          </a>
           <RouterLink to="/app/achievements" class="nav-link">
             <svg class="nav-link-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm3.5 5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm5 1a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-7 4a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm7 2a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
             Achievements
@@ -129,7 +129,7 @@
           </div>
 
           <!-- ── Lobby hero ── -->
-          <RouterLink to="/app" class="mobile-lobby mob-stagger-4" :class="{ 'is-active': isExactApp }" @click="mobileOpen = false">
+          <a href="#" class="mobile-lobby mob-stagger-4" :class="{ 'is-active': isExactApp }" @click.prevent="goToLobby(); mobileOpen = false">
             <div class="mobile-lobby-glow"></div>
             <div class="mobile-lobby-icon-wrap">
               <svg class="mobile-lobby-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L3 9h2v7a1 1 0 001 1h3v-5h2v5h3a1 1 0 001-1V9h2L10 2z"/></svg>
@@ -139,7 +139,7 @@
               <span class="mobile-lobby-sub">Pick your game & spin</span>
             </div>
             <svg class="mobile-lobby-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-          </RouterLink>
+          </a>
 
           <!-- ── Nav cards: Achievements + Leaderboard ── -->
           <div class="mobile-nav-grid">
@@ -192,6 +192,7 @@ import { RouterLink, RouterView, useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth.js";
 import { useWalletStore } from "../stores/wallet.js";
 import { useProfileStore } from "../stores/profile.js";
+import { useGameStore } from "../stores/game.js";
 import AnimatedBackground from "../components/ui/AnimatedBackground.vue";
 import {
   IconSkull,
@@ -213,6 +214,7 @@ const router = useRouter();
 const route = useRoute();
 const mobileOpen = ref(false);
 const scrollY = ref(0);
+const gameStore = useGameStore();
 
 const formattedChips = computed(() => {
   return walletStore.chipsBalance.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -258,6 +260,11 @@ async function handleLogout() {
   mobileOpen.value = false;
   await authStore.logout();
   router.push("/login");
+}
+
+function goToLobby() {
+  gameStore.leaveGame();
+  router.replace({ name: "game" });
 }
 </script>
 
